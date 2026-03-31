@@ -908,7 +908,7 @@ Solver 16
   Update Exported Variables = Logical True
 
   ! Set hydrology solver to passive (i.e. not solved) on COLD nodes/elements(?) and ungrounded region
-  !Water Sheet Thickness Passive = Opposes ColdTempMask
+  Water Sheet Thickness Passive = Opposes ColdTempMask
 
 End
 
