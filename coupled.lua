@@ -8,7 +8,7 @@ end
 
 function smoothplus(x, eps)
   k = 10
-  X = eps+ math.log(1+math.exp(k*x))/k
+  X = math.log(1+math.exp(k*x))/k
   return X
 end
 
@@ -173,6 +173,30 @@ function max(a,b )
  end  
 end
 
+function N(h, sigma, N0, hr)
+  --epsilon = N0*hr/(-sigma)
+  epsilon = 0.001
+  effectivePressure = N0*(hr - h)/(h^2 + epsilon^2)^0.5 + 0.01
+  return effectivePressure
+end
+
+
+function conductivity(EP)
+  --return D0
+  return D0*(smoothplus(EP, 0.01))^(-k0) - D0*(smoothplus(N(0,0,N0,hr),0.01))^(-k0)
+end
+
+function dkappadN(EP)
+  --return 0
+  return -k0*D0*(EP)^(-(k0+1))*smoothplusDerivative(EP)
+end
+
+function dNdh(h, sigma, N0, hr)
+  --epsilon = N0*hr/(-sigma)
+  epsilon = 0.001
+  return -N0*(hr*h + epsilon^2)/(h^2 + epsilon^2)^1.5
+end
+
 function InitialSheet(x)
   return 1e-4 + 0*0.05*math.exp(-((x-3e6)/5e4)^2)
 end
@@ -182,7 +206,7 @@ function getmeltrate(loads,weights,friction, gm, time)
     return 0.0
   else
     melt =  -(loads-0*friction)/(weights*rhoi*Lw)
-    melt = IfThenElse(time < 1E-2, 0, melt)
+    melt = IfThenElse(time < 1e-4, 0, melt)
     --melt = -(loads-friction)/(weights)
     return melt
   end

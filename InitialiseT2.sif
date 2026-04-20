@@ -14,7 +14,7 @@
 
 !check keywords warn
 !echo on master
-$namerun = "InitialT2"
+$namerun = "InitialT2FULLTEST64"
 !$restart = ""
 $element="p:1 -tri b:1 -quad b:3"
 $directsolver="MUMPS"
@@ -33,7 +33,7 @@ $adapTol = 1.0e-2
 
 Header
   Mesh DB "footprint" ""
-  Results Directory "VTUs/InitialT2"
+  Results Directory "VTUs/FULLTEST64"
 End
 
 
@@ -76,9 +76,13 @@ Simulation
 
   !! Small initial timesteps for initial adjustment
 
-    Timestep Intervals(3) = 5 5 150000 
-  Output Intervals(3) = 5 5 100
-  Timestep Sizes(3) = 1E-8 1E-4 1
+    Timestep Intervals(3) = 5 5 100000
+    Output Intervals(3) = 1 5 1
+    Timestep Sizes(3) = 1E-8 1E-4 1
+
+  !Timestep Intervals = Integer 1   !50000 
+  !Output Interval = Integer 1 
+  !Timestep Sizes = Real 1E-8
   
 Extruded Mesh Levels = Integer 51
   Preserve Baseline =  Logical True
@@ -216,28 +220,28 @@ End
 !---------------------------------------------------
 ! For bedrock
 Initial Condition 1
-  Bedrock = Variable Coordinate 1
-    Real
-      include "Initialisation/Dimensional_ICs/bed_dim.xy"
-    End
+ ! Bedrock = Variable Coordinate 1
+ !   Real
+ !     include "Initialisation/Dimensional_ICs/bed_dim.xy"
+ !   End
 
 End
 
 ! For filler layer
 Initial Condition 2
-  Bedrock = Variable Coordinate 1
-    Real
-      include "Initialisation/Dimensional_ICs/bed_dim.xy"
-    End
+!  Bedrock = Variable Coordinate 1
+!    Real
+!      include "Initialisation/Dimensional_ICs/bed_dim.xy"
+!    End
 End
 
 ! For ice
 Initial Condition 3
-Stress = Real 0.0
-  Bedrock = Variable Coordinate 1
-    Real
-      include "Initialisation/Dimensional_ICs/bed_dim.xy"
-    End
+  Stress = Real 0.0
+  !Bedrock = Variable Coordinate 1
+  !  Real
+  !    include "Initialisation/Dimensional_ICs/bed_dim.xy"
+  !  End
   Velocity 1 = 0.0
   Velocity 2 = 0.0
   Velocity 3 = 0.0
@@ -247,25 +251,27 @@ End
 ! For interface (ice lower surface)
 Initial Condition 4
 ! import initial shape of bottom ice from file
-    Zb = Variable Coordinate 1
-    Real 
-      include "Initialisation/Dimensional_ICs/zb_dim.xy"
-    End
-     refZb = Variable Coordinate 1
-    Real 
-      include "Initialisation/Dimensional_ICs/zb_dim.xy"
-    End
-   Bedrock = Variable Coordinate 1
-    Real
-      include "Initialisation/Dimensional_ICs/bed_dim.xy"
-    End
+    !Zb = Variable Coordinate 1
+    !Real 
+    !  include "Initialisation/Dimensional_ICs/zb_dim.xy"
+    !End
+    ! refZb = Variable Coordinate 1
+    !Real 
+    !  include "Initialisation/Dimensional_ICs/zb_dim.xy"
+    !End
+   !Bedrock = Variable Coordinate 1
+    !Real
+    !  include "Initialisation/Dimensional_ICs/bed_dim.xy"
+    !End
   ! import initial groundedmask from file
    !groundedmask =  Variable "Coordinate 1"
     !  Real
     !  include "Initialisation/Dimensional_ICs/gm_dim.xy"
     ! End
-    coldtempmask = Variable "Temperature"
-        Real Lua "IfThenElse(tx[0]<T0,-1,1)"
+    coldtempmask = Variable Coordinate 1
+      Real
+      include "Initialisation/Dimensional_ICs/ctmask_dim.xy"
+      End
     Water Sheet Thickness = Variable "Coordinate 1"
       Real Lua "InitialSheet(tx[0])"
 
@@ -353,13 +359,15 @@ Body Force 4 !2
     Real LUA "getmeltrate(tx[0],tx[1],tx[2],tx[3],tx[4]) + Source*tx[2]"
 
 
-    Effective Pressure = Variable "Water Sheet Thickness"
-    Real LUA "N0*(hr - tx[0])/(tx[0]^2+eps^2)^0.5+eps"
+    Effective Pressure Output = Variable "Water Sheet Thickness", "Stress 3"
+     Real Lua "N(tx[0], tx[1], N0, hr)"
 
     Hydraulic Conductivity Output = Variable "Effective Pressure Output"
-    Real LUA "D0*(smoothplus(tx[0], eps))^(-k0)"
+    Real LUA "conductivity(tx[0])"
     
-  
+    Water Sheet Thickness Passive = Variable "ColdTempMask"
+    Real Lua "-tx[0]"
+    !Passive Element Min Nodes = Integer 1
 End
 
 Body Force 5
@@ -464,21 +472,16 @@ Material 3
     Real LUA "-tx[0] + rhow*gravity*tx[1]"   ! 'reference' hydraulic potential
 
   ! Functional relationships for effective pressure and hydraulic conductivity.
-  Effective Pressure = Variable "Water Sheet Thickness"
-    Real LUA "N0*(hr - tx[0])/(tx[0]^2+eps^2)^0.5+eps"
-  !Hydraulic Conductivity = Real #D0
+  Effective Pressure = Variable "Water Sheet Thickness", "Stress 3"
+    Real Lua "N(tx[0], tx[1], N0, hr)"
   Hydraulic Conductivity = Variable "Effective Pressure"
-    Real LUA "D0*(smoothplus(tx[0], eps))^(-k0)"
-    !Real LUA "D0*tx[0]^(-k0)"
-    !Real LUA "D0*(0.5*(tx[0]+delta*log(cosh((tx[0]-eps)/delta))))^(-k0)
-  Effective Pressure First Derivative = Variable "Water Sheet Thickness"
-    Real LUA "-N0*(hr*tx[0] + eps^2)/(tx[0]^2 + eps^2)^1.5"
+    Real LUA "conductivity(tx[0])"
+  Effective Pressure First Derivative = Variable "Water Sheet Thickness", "Stress 3"
+    Real LUA "dNdh(tx[0],tx[1], N0, hr)"
   Effective Pressure Second Derivative = Variable "Water Sheet Thickness"
      Real LUA "2*N0*(hr + eps)/((tx[0] + eps)^3)"
-  !Hydraulic Conductivity First Derivative = Real 0.00
   Hydraulic Conductivity First Derivative = Variable "Effective Pressure"
-    Real LUA " -k0*D0*(tx[0])^(-(k0+1))*smoothplusDerivative(tx[0])"
-    !Real LUA "-k0*D0*(N+eps)^(-(k0+1))"
+    Real LUA "dkappadN(tx[0])"
 End
 
 
@@ -515,7 +518,7 @@ End
 Solver 2
   Exec Solver = "Before All"
   Equation = GroundedMaskini
-  Procedure = "ElmerIceSolvers" "GroundedSolver"
+  Procedure = "SRC/GroundedSolver.so" "GroundedSolver"
   Variable = GroundedMask
   Variable DOFs = 1
   Toler = Real 1.0e-3
@@ -602,7 +605,7 @@ End
 Solver 8
   !Exec Solver = "before timestep"
   Equation = "GroundedMask"
-  Procedure = "ElmerIceSolvers" "GroundedSolver"
+  Procedure = "SRC/GroundedSolver.so" "GroundedSolver"
   Variable = "GroundedMask"
   Variable DOFs = 1
 
@@ -758,7 +761,7 @@ Solver 12
   !Exec Solver = "Never"
   ! Element = "p:1 -tri b:1 -quad b:3 -wedge b:1 -brick b:4"
   Exec Solver = "After Timestep"
-  Procedure =  "FreeSurfaceSolver" "FreeSurfaceSolver"
+  Procedure =  "SRC/FreeSurfaceSolver.so" "FreeSurfaceSolver"
   Variable = "Zb"
   Variable DOFS =  1
   Steady State Convergence Tolerance = 1.0E-03
@@ -885,7 +888,7 @@ Solver 16
   Linear System Abort Not Converged = True
   Linear System Preconditioning = "ILU1"
   Linear System Residual Output = 100
-  Nonlinear System Convergence Tolerance = 1.0e-4 !1.0E-05
+  Nonlinear System Convergence Tolerance = 1.0e-5 !1.0E-05
   Nonlinear System Max Iterations = 200
   Nonlinear System Min Iterations = 1
   Nonlinear System Relaxation Factor = Real 0.5
@@ -898,7 +901,7 @@ Solver 16
 
 !  Sheet Integration Method = String "Implicit"
 
-  Steady State Convergence Tolerance = 1.0E-03
+  Steady State Convergence Tolerance = 1.0E-04
   Exported Variable 1 = -dofs 1 "Melt rate"      ! Other variables calculeted in the solver that we want to export ?
   Exported Variable 2 = -dofs 1 "Effective Pressure Output"    ! defined in Materials section
   Exported Variable 3 = -dofs 3 "Water Flux"
@@ -906,9 +909,6 @@ Solver 16
 
   Nonlinear Update Exported Variables = Logical True
   Update Exported Variables = Logical True
-
-  ! Set hydrology solver to passive (i.e. not solved) on COLD nodes/elements(?) and ungrounded region
-  Water Sheet Thickness Passive = Opposes ColdTempMask
 
 End
 
@@ -1208,9 +1208,9 @@ Boundary Condition  19
   !  End
   
   !!!  OR use frictional heating neumann condition
-  Temperature = Real 273.15
-  Temperature Condition = Variable "GroundedMask", "ColdTempMask"  
-    Real Lua "tx[0]*tx[1]*(tx[0]+1)+1"
+  Temperature = Real #T0
+  Temperature Condition = Variable "ColdTempMask"  
+    Real Lua "tx[0]"
     !  Real Lua "-1*tx[0]"
 
   Friction Loads = Variable Flow Solution Loads 1, Flow Solution Loads 2, Flow Solution Loads 3, Velocity 1, Velocity 2, Velocity 3
@@ -1222,10 +1222,6 @@ Boundary Condition  19
   
   Calculate Temperature Boundary Weights = Logical True
 
-  Water Sheet Thickness = Variable "groundedmask"
-    Real LUA "hwCondition(tx[0])"
-  Water Sheet Thickness Condition = Variable "coldtempmask"
-    Real LUA "-tx[0]"
 
   !Water Sheet Thickness = Real 0.0
   !Water Sheet Thickness Condition = Variable "GroundedMask", "ColdTempMask"  
@@ -1234,6 +1230,11 @@ Boundary Condition  19
   FSSA Theta = Real 1.0 
   FSSA Flag = String $fssaflag
   FSSA Accumulation = Real 0.0
+
+  Water Sheet Thickness = Real #hr
+
+  Water Sheet Thickness Condition = Variable "Time","GroundedMask"
+        Real LUA "IfThenElse(tx[0]>1E-5, -tx[1], -1)"
 End
 
 Boundary Condition 20

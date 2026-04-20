@@ -5,8 +5,8 @@
 #!/bin/bash
 #SBATCH --output=/home/slloyd/FlowlineScaled/Outputs/slurm-%j.out
 #SBATCH --job-name="3DSheet"
-#SBATCH --ntasks=128
-#SBATCH --time=36:00:00
+#SBATCH --ntasks=64
+#SBATCH --time=72:00:00
 
 
 
@@ -53,6 +53,10 @@ echo "Solving for Diffusion Only Temperature Field"
 nohup mpirun -np $nodes ElmerSolver InitialiseT1.sif > Initialisation/ScriptOutputs/InitialT1.out 
 echo "Done"
 echo ""
+
+cd SRC
+elmerf90 sheetsolverhw.f90 -o SheetSolverhw.so # > /dev/null 2>&1
+cd ../
 
 echo "Solving for Full Temperature Field"
 nohup mpirun -np $nodes ElmerSolver InitialiseT2.sif > Initialisation/ScriptOutputs/InitialT2.out 

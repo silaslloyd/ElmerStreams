@@ -75,6 +75,7 @@ Simulation
   BDF Order = 1
 
   !! Small initial timesteps for initial adjustment
+  !
   Timestep Intervals(4) = 5 5 5 100
   Output Intervals(4) = 5 5 5 10
   Timestep Sizes(4) = Real 1e3 1e4 1e5 1e6
@@ -104,17 +105,20 @@ Simulation
   Post File = "$namerun$.vtu"
   Output File = "$namerun$.result"
 
-  !Output Variable 1 = "W"
-  !Output Variable 2 = "Velocity 1"
-  !Output Variable 3 = "Velocity 2"
-  !Output Variable 4 = "Velocity 3"
-  !Output Variable 5 = "Flow Solution Loads 1"
-  !Output Variable 6 = "Flow Solution Loads 2"
-  !Output Variable 7 = "Flow Solution Loads 3"
-  !Output Variable 8 = "Temperature"
-  !Output Variable 9 = "Zs"
-  !utput Variable 10 = "Zb"
-
+  Output Variable 1 = "W"
+  Output Variable 2 = "Velocity 1"
+  Output Variable 3 = "Velocity 2"
+  Output Variable 4 = "Velocity 3"
+  Output Variable 5 = "Flow Solution Loads 1"
+  Output Variable 6 = "Flow Solution Loads 2"
+  Output Variable 7 = "Flow Solution Loads 3"
+  Output Variable 8 = "Temperature"
+  Output Variable 9 = "Zs"
+  Output Variable 10 = "Zb"
+  Output Variable 11 = "Pressure"
+  Output Variable 12 = "Bedrock"
+  Output Variable 13 = "GroundedMask"
+  Output Variable 14 = "partition"
 
   ! usually, Dirichlet BC's are initialized before everything else. Sometimes those 
   ! conditions are dependent on solutions of earlier solvers; next line ensures that
