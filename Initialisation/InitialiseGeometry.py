@@ -110,16 +110,19 @@ l = lambda x: np.maximum(l_shelf(x), l_grounded(x))
 
 # Plot
 
-X = np.linspace(0,6E6,100000)
+X = np.linspace(0,6E6,10000)
 zs = np.column_stack((X, s(X)))
 zb = np.column_stack((X, l(X)))
 b = np.column_stack((x, bed_shifted(x)))
 T = np.column_stack((X, T_func(X)))
+CT = np.column_stack((X, np.float64(T_func(X) >= 273.149)*2-1))
+
 
 np.savetxt('Dimensional_ICs/zs_dim.xy', zs, fmt='%g', delimiter=' ')
 np.savetxt('Dimensional_ICs/zb_dim.xy', zb, fmt='%g', delimiter=' ')
 np.savetxt('Dimensional_ICs/bed_dim.xy', b, fmt='%g', delimiter=' ')
 np.savetxt('Dimensional_ICs/Tb_dim.xy', T, fmt='%g', delimiter=' ')
+np.savetxt('Dimensional_ICs/ctmask_dim.xy', CT, fmt='%g', delimiter=' ')
 
 if Plot == True:
     plt.figure()
