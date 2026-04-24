@@ -596,7 +596,7 @@ End
 
 Solver 7
   Equation = Fw
-  exec Solver = never
+!  exec Solver = never
   Procedure = "ElmerIceSolvers" "GetHydrostaticLoads"
   Variable = Fw[Fwater:3]
   Variable DOFs = 3
