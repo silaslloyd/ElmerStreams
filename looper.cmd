@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --output=/SCRATCH/slloyd/FlowlineGIT/looper_slurms/slurm-%j.out
+#SBATCH --output=./looper_slurms/slurm-%j.out
 #SBATCH --job-name="2DSheet_looper"
 #SBATCH --ntasks=64
 #SBATCH --time=72:00:00
