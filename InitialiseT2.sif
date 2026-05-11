@@ -115,7 +115,7 @@ Extruded Mesh Levels = Integer 51
   !-----------------------------------------
   Initialize Dirichlet Conditions = Logical False
 
-  Restart File = ""
+  Restart File = "InitialT1.result"
   Restart Position = 0
   Restart Before Initial Conditions = Logical True
   Restart Time Ignore = Logical True
@@ -206,11 +206,10 @@ Equation 4
   Active Solvers(6) = 2 7 8 12 15 16
   Convection = "Computed"                          
   Flow Solution Name = String "Flow Solution" 
-  Concentration Units = "Absolute Mass" !!!!PROXY!!!
 End
 Equation 5
   Name = "freesurface equations"
-  Active Solvers(2) = 13 17
+  Active Solvers(1) = 13 
   Convection = "Computed"
   Flow Solution Name = String "Flow Solution" 
 End
@@ -899,42 +898,6 @@ Solver 16
 End
 
 
-Solver 17
-  Equation = "Free Surface Top INIT"
-  Exec Solver = "Never"
-  ! Exec Solver = "Predictor-Corrector"
-    !Element = "p:2 -tri b:1 -quad b:3 -wedge b:1 -brick b:4"
-  Procedure =  "SRC/FreeSurfaceSolver2.so" "FreeSurfaceSolver"
-  Variable = "Zs"
-  Variable DOFs =  1
-  Exported Variable 1 = "Zs Residual"
-  Exported Variable 1 DOFs = 1
-  Exported Variable 2 = -dofs 3 "NodalCoordsSurf"
-
-
-  ! Before Linsolve = "EliminateDirichlet" "EliminateDirichlet"
-
-  Linear System Solver = Iterative
-  Linear System Direct Method = $directsolver
-  Linear System Max Iterations = 1500
-  Linear System Iterative Method = BiCGStab
-  Linear System Preconditioning = ILU0
-  Linear System Convergence Tolerance = Real 1.0e-6
-  Linear System Abort Not Converged = False
-  Linear System Residual Output = 1
-
-  Nonlinear System Max Iterations = 100
-  Nonlinear System Convergence Tolerance  = 1.0e-5 !1.0e-5
-  Nonlinear System Relaxation Factor = 1.00
-
-  Steady State Convergence Tolerance = 1.0e-04
-
-  Stabilization Method = Bubbles
-  Apply Dirichlet = Logical True
-
-  Relaxation Factor = Real 1.0
-
-End 
 
 !---------------------------------------------------
 !---------------- BOUNDARY CONDITIONS --------------
