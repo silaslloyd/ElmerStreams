@@ -368,6 +368,10 @@ Body Force 4 !2
     Water Sheet Thickness Passive = Variable "ColdTempMask"
     Real Lua "-tx[0]"
     !Passive Element Min Nodes = Integer 1
+    Min Zb = Equals "bedrock"
+    Max Zb = Real 0.0
+    Min Zs = Real 0.0
+    Max Zs = Real 10000
 End
 
 Body Force 5

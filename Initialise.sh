@@ -54,12 +54,12 @@ nohup mpirun -np $nodes ElmerSolver InitialiseT1.sif > Initialisation/ScriptOutp
 echo "Done"
 echo ""
 
-cd SRC
-elmerf90 sheetsolverhw.f90 -o SheetSolverhw.so # > /dev/null 2>&1
-cd ../
+#cd SRC
+#elmerf90 sheetsolverhw.f90 -o SheetSolverhw.so # > /dev/null 2>&1
+#cd ../
 
-echo "Solving for Full Temperature Field"
-nohup mpirun -np $nodes ElmerSolver InitialiseT2.sif > Initialisation/ScriptOutputs/InitialT2.out 
-echo "Done"
-echo ""
-echo "Initial Conditions Calculated"
+#echo "Solving for Full Temperature Field"
+#nohup mpirun -np $nodes ElmerSolver InitialiseT2.sif > Initialisation/ScriptOutputs/InitialT2.out 
+#echo "Done"
+#echo ""
+#echo "Initial Conditions Calculated"

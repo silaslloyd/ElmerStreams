@@ -91,3 +91,4 @@ eps = 0.001 ---0.01 -- tolerance used in hydraulic conductivity parametrisation
 Ncut = eps + Ncutepsdiff --0.001 -- tolerance used in hydraulic conductivity parametrisation
 Ncoeff = (1/Ncut)*(1/3+((1/18)*(3*(Ncut-eps)-1))^(1/2))  -- for regularisation Ntilde = Ncoeff*N^2 + (1-2*delta*Ncoeff)*N + eps
 
+--print(ascale)
