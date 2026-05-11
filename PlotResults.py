@@ -66,9 +66,9 @@ def update(frame_idx, data, Timesteps):
     common_nodes_bed = common_nodes & set(var_lookups["zb"])
     
     common_nodes_surf = sorted(common_nodes & set(var_lookups["zs"]))
-    common_nodes_bedrock = sorted(n for n in common_nodes_bulk)
     common_nodes_bulk = common_nodes & set(var_lookups["velocity 1"])
-    
+    common_nodes_bedrock = sorted(n for n in common_nodes_bulk)
+
     common_nodes_bed_0 = sorted(n for n in common_nodes_bed if y_lookup[n] < 100)
     common_nodes_surf_0 = sorted(n for n in common_nodes_surf if y_lookup[n] < 100)
     common_nodes_bed_1 = sorted(n for n in common_nodes_bed if y_lookup[n] > 10)
@@ -216,7 +216,7 @@ def update(frame_idx, data, Timesteps):
     uzscale = 2137/133021
     vel_contours = ax1.tricontourf(x_body[np.where(x_body < gl)], z_body[np.where(x_body < gl)], velx_body[np.where(x_body < gl)] ,cmap = "cool", vmin = 0, vmax = 150, levels = np.linspace(0,150,100))
     #ax1.tricontour(x_body[np.where(x_body < gl)]/1923691, z_body[np.where(x_body < gl)]/2137, velx_body[np.where(x_body < gl)]/uscale, levels = 50, vmin = 0, vmax = 15, colors = "white", linewidths = 0.21)
-    temp_contours = ax1.tricontourf(x_bedrock, z_bedrock, temp_body)
+    #temp_contours = ax1.tricontourf(x_bedrock, z_bedrock, temp_body)
     
     #ax1.set_xlim(1.8e6,2.6e6)
     #ax1.set_xlim(0,4.5e6)
