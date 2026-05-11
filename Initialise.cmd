@@ -41,12 +41,12 @@ echo ""
 cd ../
 
 echo "Solving for Steady-State Strain Heating"
-#nohup mpirun -np $nodes ElmerSolver InitialiseVel.sif > Initialisation/ScriptOutputs/InitialVel.out 
+nohup mpirun -np $nodes ElmerSolver InitialiseVel.sif > Initialisation/ScriptOutputs/InitialVel.out 
 echo "Done"
 echo ""
 
 echo "Solving for Diffusion Only Temperature Field"
-#nohup mpirun -np $nodes ElmerSolver InitialiseT1.sif > Initialisation/ScriptOutputs/InitialT1.out 
+nohup mpirun -np $nodes ElmerSolver InitialiseT1.sif > Initialisation/ScriptOutputs/InitialT1.out 
 echo "Done"
 echo ""
 
