@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --output=./Initialisation/slurm-%j.out
-#SBATCH --job-name="2DSheet"
+#SBATCH --job-name="FlowlineInit"
 #SBATCH --ntasks=64
 #SBATCH --time=72:00:00
 #SBATCH --mail-type=all
