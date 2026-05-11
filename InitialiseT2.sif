@@ -14,7 +14,7 @@
 
 !check keywords warn
 !echo on master
-$namerun = "InitialT2FULLTEST64"
+$namerun = "InitT2"
 !$restart = ""
 $element="p:1 -tri b:1 -quad b:3"
 $directsolver="MUMPS"
@@ -33,7 +33,7 @@ $adapTol = 1.0e-2
 
 Header
   Mesh DB "footprint" ""
-  Results Directory "VTUs/FULLTEST64"
+  Results Directory "VTUs/InitT2"
 End
 
 
@@ -115,9 +115,9 @@ Extruded Mesh Levels = Integer 51
   !-----------------------------------------
   Initialize Dirichlet Conditions = Logical False
 
-  Restart File = "InitialT1.result"
+  Restart File = ""
   Restart Position = 0
-  Restart Before Initial Condition = Logical True
+  Restart Before Initial Conditions = Logical True
   Restart Time Ignore = Logical True
 
   ascii output = logical true
@@ -248,26 +248,8 @@ Initial Condition 3
   Pressure = 0.0
 End
 
-! For interface (ice lower surface)
+
 Initial Condition 4
-! import initial shape of bottom ice from file
-    !Zb = Variable Coordinate 1
-    !Real 
-    !  include "Initialisation/Dimensional_ICs/zb_dim.xy"
-    !End
-    ! refZb = Variable Coordinate 1
-    !Real 
-    !  include "Initialisation/Dimensional_ICs/zb_dim.xy"
-    !End
-   !Bedrock = Variable Coordinate 1
-    !Real
-    !  include "Initialisation/Dimensional_ICs/bed_dim.xy"
-    !End
-  ! import initial groundedmask from file
-   !groundedmask =  Variable "Coordinate 1"
-    !  Real
-    !  include "Initialisation/Dimensional_ICs/gm_dim.xy"
-    ! End
     coldtempmask = Variable Coordinate 1
       Real
       include "Initialisation/Dimensional_ICs/ctmask_dim.xy"
@@ -275,15 +257,17 @@ Initial Condition 4
     Water Sheet Thickness = Variable "Coordinate 1"
       Real Lua "InitialSheet(tx[0])"
 
-
+   ! Zb = Variable Coordinate 1
+   !   Real 
+   !     include "zb_new.xy"
+   !   End
 End
 
 ! For ice top surface
 Initial Condition 5
-! import initial shape of surface from file
   !Zs = Variable "Coordinate 1"
   !  Real 
-  !    include "Initialisation/Dimensional_ICs/zs_dim.xy"
+  !    include "zs_new.xy"
   !  End
 End
 
@@ -368,10 +352,6 @@ Body Force 4 !2
     Water Sheet Thickness Passive = Variable "ColdTempMask"
     Real Lua "-tx[0]"
     !Passive Element Min Nodes = Integer 1
-    Min Zb = Equals "bedrock"
-    Max Zb = Real 0.0
-    Min Zs = Real 0.0
-    Max Zs = Real 10000
 End
 
 Body Force 5
@@ -600,7 +580,7 @@ End
 
 Solver 7
   Equation = Fw
-!  exec Solver = never
+  !exec Solver = never
   Procedure = "ElmerIceSolvers" "GetHydrostaticLoads"
   Variable = Fw[Fwater:3]
   Variable DOFs = 3
@@ -662,6 +642,8 @@ Solver 9
 
   Bubbles in global system = False
   Exported Variable 1 = -dofs 4 Flow Solution Loads
+  Exported Variable 2 = -dofs 1 External Pressure
+
 End
 
 !-----------------------------------------------------
