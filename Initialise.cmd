@@ -50,3 +50,4 @@ nohup mpirun -np $nodes ElmerSolver InitialiseT1.sif > Initialisation/ScriptOutp
 echo "Done"
 echo ""
 
+echo "InitialT1.out" > restart.txt
