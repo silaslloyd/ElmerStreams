@@ -103,7 +103,7 @@ def update(frame_idx, data, Timesteps):
     idx = np.argsort(x_bedrock)
     x_bedrock = x_bedrock[idx]
     z_bedrock = z_bedrock[idx]
-    temp_body = temp_body[idx]
+    #temp_body = temp_body[idx]
 
 
     x2 = np.array([x_lookup[n] for n in common_nodes_bed_1])
