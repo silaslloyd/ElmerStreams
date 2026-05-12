@@ -74,7 +74,7 @@ def process_file(fname, OUT_DIR):
                             break           
                         
 
-                        if timestepcounter <= 100:
+                        if timestepcounter <= 1:
                             skipTimestep = True
                             timestepcounter += 1
                            # print(timestepcounter)

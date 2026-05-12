@@ -1,0 +1,7 @@
+footprint/
+looper_slurms/
+OutputPickles/
+OutputPlots/
+VTUs/
+SIFs/
+slurm*

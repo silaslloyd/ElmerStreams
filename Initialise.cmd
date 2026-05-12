@@ -11,6 +11,17 @@ nodes=$(lua -e "dofile('parameters.lua'); print(nodes)")
 
 export DIM=2
 
+echo "Building Result Directories"
+cd Initialisation
+mkdir -p ScriptOutputs
+cd ..
+mkdir -p looper_slurms
+mkdir -p OuputPickles
+mkdir -p OutputPlots
+mkdir -p VTUs
+echo "Done"
+echo ""
+
 echo "Running on $nodes nodes"
 echo "----------------------------------"
 echo "Starting Initialisation"
