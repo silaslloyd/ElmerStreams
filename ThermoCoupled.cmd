@@ -21,11 +21,11 @@ sed "s/__RUNNAME__/${RUNNAME}/g" "${SIF_TEMPLATE}" > "${SIF_FILE}"
 
 nodes=$(lua -e "dofile('parameters.lua'); print(nodes)")
 
-mkdir -p "${SIF_FILE}_ScriptOutputs"
+mkdir -p "ThermoCoupledScriptOutputs"
 export DIM=2
 module load elmerfem 
 echo "Solving for Full ThermoCoupled Problem: ${RUNNAME}"
-nohup mpirun -np $nodes ElmerSolver "${SIF_FILE}" > ${SIF_FILE}_ScriptOutputs/${RUNNAME}.out 
+nohup mpirun -np $nodes ElmerSolver "${SIF_FILE}" > ThermoCoupledScriptOutputs/${RUNNAME}.out 
 echo "Done"
 echo ""
 
@@ -35,6 +35,6 @@ cd ${RUNNAME}
 mkdir -p PNGs
 cd ../../
 
-nohup mpirun -np 64 python -u ReadResultFile.py "./footprint/${RUNNAME}" "./OutputPickles/${RUNNAME}" > "${SIF_FILE}_ScriptOutputs/data_${RUNNAME}.out"
-nohup python -u PlotResults.py "./OutputPickles/${RUNNAME}" "./OutputPlots/${RUNNAME}/" > "${SIF_FILE}_ScriptOutputs/plot_${RUNNAME}.out"
+nohup mpirun -np 64 python -u ReadResultFile.py "./footprint/${RUNNAME}" "./OutputPickles/${RUNNAME}" > "ThermoCoupledScriptOutputs/data_${RUNNAME}.out"
+nohup python -u PlotResults.py "./OutputPickles/${RUNNAME}" "./OutputPlots/${RUNNAME}/" > "ThermoCoupledScriptOutputs/plot_${RUNNAME}.out"
 echo "DONE"
