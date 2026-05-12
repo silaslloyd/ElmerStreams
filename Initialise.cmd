@@ -19,8 +19,9 @@ echo ""
 echo "Building Result Directories"
 cd Initialisation
 mkdir -p ScriptOutputs
-cd ..
+cd ../slurms
 mkdir -p looper_slurms
+cd ..
 mkdir -p OuputPickles
 mkdir -p OutputPlots
 mkdir -p VTUs

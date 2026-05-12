@@ -4,7 +4,6 @@ OutputPickles/
 OutputPlots/
 VTUs/
 SIFs/
-slurm*
 ThermoCoupled_slurm*
 *.sif
 *.out
