@@ -5,3 +5,5 @@ OutputPlots/
 VTUs/
 SIFs/
 slurm*
+ThermoCoupled_slurm*
+

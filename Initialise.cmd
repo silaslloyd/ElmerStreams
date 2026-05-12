@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --output=./Initialisation/slurm-%j.out
+#SBATCH --output=./slurms/Initialise_slurm-%j.out
 #SBATCH --job-name="FlowlineInit"
 #SBATCH --ntasks=64
 #SBATCH --time=72:00:00
@@ -11,6 +11,11 @@ nodes=$(lua -e "dofile('parameters.lua'); print(nodes)")
 
 export DIM=2
 
+echo "Running on $nodes nodes"
+echo "----------------------------------"
+echo "Starting Initialisation"
+
+echo ""
 echo "Building Result Directories"
 cd Initialisation
 mkdir -p ScriptOutputs
@@ -22,12 +27,8 @@ mkdir -p VTUs
 echo "Done"
 echo ""
 
-echo "Running on $nodes nodes"
-echo "----------------------------------"
-echo "Starting Initialisation"
-echo ""
-module load elmerfem
 
+module load elmerfem
 
 echo ""
 echo "Building Mesh"

@@ -14,7 +14,7 @@
 
 !check keywords warn
 !echo on master
-$namerun = "InitT2"
+$namerun = "ThermoCoupled"
 !$restart = ""
 $element="p:1 -tri b:1 -quad b:3"
 $directsolver="MUMPS"
@@ -33,7 +33,7 @@ $adapTol = 1.0e-2
 
 Header
   Mesh DB "footprint" ""
-  Results Directory "VTUs/InitT2"
+  Results Directory "VTUs/ThermoCoupled"
 End
 
 
