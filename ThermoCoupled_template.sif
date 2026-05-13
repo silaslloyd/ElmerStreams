@@ -574,19 +574,16 @@ Solver 6
    Bubbles in global system = False
 End
 
-
-!!--Mid Timestep--Coupled Iter--!!
-
 Solver 7
   Equation = Fw
-  !exec Solver = never
+  exec Solver = "before timestep"
   Procedure = "ElmerIceSolvers" "GetHydrostaticLoads"
   Variable = Fw[Fwater:3]
   Variable DOFs = 3
 End
 
 Solver 8
-  !Exec Solver = "before timestep"
+  Exec Solver = "before timestep"
   Equation = "GroundedMask"
   Procedure = "SRC/GroundedSolver.so" "GroundedSolver"
   Variable = "GroundedMask"
@@ -597,6 +594,10 @@ Solver 8
   Exported Variable 1 = -dofs 1 bedrock
   Bubbles in global system = False
 End
+
+
+
+!!--Mid Timestep--Coupled Iter--!!
 
 
 Solver 9
@@ -817,7 +818,7 @@ End
 
 Solver 14
   Equation = String "StressSolver"
-  !Exec Solver = "never"
+  Exec Solver = "after timestep"
   Procedure =  File "ElmerIceSolvers" "ComputeDevStress"
   ! this is just a dummy, hence no output is needed
   !-----------------------------------------------------------------------
