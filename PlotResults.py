@@ -320,7 +320,7 @@ for i in range(len(Timesteps)):
 #    print(i)
     update(i,merged_data, Timesteps)
 
-    plt.savefig(f'{OUTPUT_DIR}sheet/profiles_{Timesteps[i]}.png', dpi = 400)
+    plt.savefig(f'{OUTPUT_DIR}VTUs/profiles_{Timesteps[i]}.png', dpi = 400)
 
 plot_all = lambda x: plot_all_parts(x,Timesteps)
 
