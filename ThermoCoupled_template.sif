@@ -241,10 +241,10 @@ Initial Condition 3
   !  Real
   !    include "Initialisation/Dimensional_ICs/bed_dim.xy"
   !  End
-  Velocity 1 = 0.0
-  Velocity 2 = 0.0
-  Velocity 3 = 0.0
-  Pressure = 0.0
+  !Velocity 1 = 0.0
+  !Velocity 2 = 0.0
+  !Velocity 3 = 0.0
+  !Pressure = 0.0
 End
 
 
@@ -1159,8 +1159,9 @@ Boundary Condition  19
   
   !!!  OR use frictional heating neumann condition
   Temperature = Real #T0
-  Temperature Condition = Variable "ColdTempMask"  
-    Real Lua "tx[0]"
+  Temperature Condition = Variable "groundedmask", "ColdTempMask"
+      Real LUA "tx[0]*tx[1]*(tx[0]+1)+1"
+    !Real Lua "tx[0]"
     !  Real Lua "-1*tx[0]"
 
   Friction Loads = Variable Flow Solution Loads 1, Flow Solution Loads 2, Flow Solution Loads 3, Velocity 1, Velocity 2, Velocity 3
