@@ -203,7 +203,7 @@ End
 
 Equation 4
   Name = "interface equations"
-  Active Solvers(6) = 2 7 8 12 15 16
+  Active Solvers(7) = 2 7 8 12 15 16 17
   Convection = "Computed"                          
   Flow Solution Name = String "Flow Solution" 
 End
@@ -583,7 +583,7 @@ Solver 7
 End
 
 Solver 8
-  Exec Solver = "before timestep"
+ ! Exec Solver = "never"
   Equation = "GroundedMask"
   Procedure = "SRC/GroundedSolver.so" "GroundedSolver"
   Variable = "GroundedMask"
@@ -899,6 +899,19 @@ Solver 16
 End
 
 
+Solver 17
+  !Exec Solver = "after timestep"
+  Exec Solver = "never"
+  Equation = "GroundedMask_end"
+  Procedure = "SRC/GroundedSolver.so" "GroundedSolver"
+  Variable = "GroundedMask"
+  Variable DOFs = 1
+
+  Toler = Real 1.0e-03
+  Bedrock Variable = String "bedrock"
+  Exported Variable 1 = -dofs 1 bedrock
+  Bubbles in global system = False
+End
 
 !---------------------------------------------------
 !---------------- BOUNDARY CONDITIONS --------------
