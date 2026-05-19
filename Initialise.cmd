@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --output=./Initialisation/slurm-%j.out
+#SBATCH --output=./slurms/Initialise_slurm-%j.out
 #SBATCH --job-name="FlowlineInit"
 #SBATCH --ntasks=64
 #SBATCH --time=72:00:00
@@ -14,9 +14,22 @@ export DIM=2
 echo "Running on $nodes nodes"
 echo "----------------------------------"
 echo "Starting Initialisation"
-echo ""
-module load elmerfem
 
+echo ""
+echo "Building Result Directories"
+cd Initialisation
+mkdir -p ScriptOutputs
+cd ../slurms
+mkdir -p looper_slurms
+cd ..
+mkdir -p OuputPickles
+mkdir -p OutputPlots
+mkdir -p VTUs
+echo "Done"
+echo ""
+
+
+module load elmerfem
 
 echo ""
 echo "Building Mesh"

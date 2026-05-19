@@ -120,7 +120,7 @@ Simulation
   Output Variable 7 = "Flow Solution Loads 1"
   Output Variable 8 = "Flow Solution Loads 2"
   Output Variable 9 = "Flow Solution Loads 3"
-  !Output Variable 10 = "Zs"
+  Output Variable 10 = "Pressure"
   !Output Variable 11 = "Zb"
 End
 

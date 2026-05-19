@@ -1,0 +1,12 @@
+footprint/
+looper_slurms/
+OutputPickles/
+OutputPlots/
+VTUs/
+SIFs/
+ThermoCoupled_slurm*
+*.sif
+*.out
+!InitialiseT1.sif
+!InitialiseVel.sif
+!ThermoCoupled_template.sif
