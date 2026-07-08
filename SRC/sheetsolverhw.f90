@@ -49,7 +49,7 @@ SUBROUTINE SheetSolverhw( Model,Solver,dt,TransientSimulation )
 !------------------------------------------------------------------------------
   TYPE(Element_t),POINTER :: Element
   REAL(KIND=dp) :: Norm
-  INTEGER :: i, j, m, n, n_nei, nb, nd, t, active,passive, istat, num_cold   ! n = number of nodes (given element), n = number of degrees of freedom (given element), nd = number of DOFs on the boundary (given element), t = index for..., active = number of active element
+  INTEGER :: i, j, m, n, n_nei, nb, nd, t, active,passive, istat, correctedvalues  , num_cold !, n = number of nodes (given element), n = number of degrees of freedom (given element), nd = number of DOFs on the boundary (given element), t = index for..., active = number of active element
   INTEGER :: iter, maxiter  ! nonlinear iteration number, max number of nonlinear iterations
   LOGICAL :: Found, Newton, BulkUpdate, RHSUpdate, AllocationsDone = .FALSE.
   TYPE(Mesh_t), POINTER :: Mesh 
@@ -59,7 +59,7 @@ SUBROUTINE SheetSolverhw( Model,Solver,dt,TransientSimulation )
   REAL(KIND=dp), POINTER :: hw(:), qw(:), ctvals(:), xvals(:)
   REAL(KIND=dp), ALLOCATABLE :: hwOld(:)  ! copy of values to retain when pointer is overwritten by new iteration values
   INTEGER, POINTER :: hwPerm(:), qwPerm(:), ctperm(:), Xperm(:)  ! Used to match up node number with solution value at that node (not obvious due to how Elmer stores values)
-  INTEGER, ALLOCATABLE :: hwOldPerm(:)  ! copy of values to retain when pointer is overwritten by new iteration values
+  INTEGER, ALLOCATABLE :: hwOldPerm(:), coordinationnumber(:), numberofpassiveneighbours(:)  ! copy of values to retain when pointer is overwritten by new iteration values
   TYPE(Nodes_t) :: ElementNodes
   INTEGER :: dim, qwNDOFs, k, rankA, rankM, dimsheet
   !REAL(KIND=dp), ALLOCATABLE :: nodalhw(:), dhwdx(:,:), gradPhi0(:,:), dBasisdx(:,:), nodalhwOld(:), dhwdxOld(:,:), nodalqw(:,:)
@@ -70,7 +70,7 @@ SUBROUTINE SheetSolverhw( Model,Solver,dt,TransientSimulation )
 
   CHARACTER(LEN=MAX_NAME_LEN) :: SolverName
 
-  SAVE hwOld, hwOldPerm, MASS, STIFF, LOAD, FORCE
+  SAVE hwOld, hwOldPerm, MASS, STIFF, LOAD, FORCE, coordinationnumber, numberofpassiveneighbours
 
 !PointerToSolver => Solver    ! https://fortran-lang.discourse.group/t/understanding-fortran-pointers/1142
 
@@ -91,7 +91,8 @@ SUBROUTINE SheetSolverhw( Model,Solver,dt,TransientSimulation )
       DEALLOCATE( hwOld, hwOldPerm )
     END IF
 
-    ALLOCATE( hwOld(m), hwOldPerm(m), MASS(n,n), STIFF(n,n), LOAD(n), FORCE(n), STAT=istat )
+    ALLOCATE( hwOld(m), hwOldPerm(m), MASS(n,n), STIFF(n,n), LOAD(n), FORCE(n), &
+         coordinationnumber(m), numberofpassiveneighbours(m), STAT=istat )
 
     IF ( istat /= 0 ) THEN
       CALL FATAL( 'SheetSolver', 'Memory allocation error' )
@@ -158,18 +159,34 @@ SUBROUTINE SheetSolverhw( Model,Solver,dt,TransientSimulation )
     ! ------------------
     Active = GetNOFActive()   ! number of active elements (i.e. not passive)
     !WRITE(*,*) Active, " active elements"
+
+    ! per-node counter initialization
+    coordinationnumber=0
+    numberofpassiveneighbours=0
+    
     DO t=1,Active   ! for each active element..
       Element => GetActiveElement(t)   ! information about that element
       !WRITE(*,*) "___________________"
       !WRITE(*,*) "ELEMENT", t
-      num_cold = 0._dp
+      num_cold = 0._dp ! REMOVED, AS UNUSED IN THIS CONTEXT
       IF (ParEnv % myPe .NE. Element % partIndex) CYCLE
       n  = Element % TYPE % NumberOfNodes !GetElementNOFNodes()        ! number of nodes
       nd = GetElementNOFDOFs()         ! number of degrees of freedom (DOF)
       nb = GetElementNOFBDOFs()        ! number of BUBBLES DOFs (NOT boundary DOFs)
       dimsheet = Element % TYPE % DIMENSION
-      
-      
+
+      ! Set per-node counters for coordination number and number of passive elements for later post-processing step
+      coordinationnumber(Element % NodeIndexes(1:n)) = coordinationnumber(Element % NodeIndexes(1:n)) + 1
+      DO i=1, n   ! ... for each node within the element (LOCAL nodal index)
+        j = Element % NodeIndexes(i) 
+        IF (ctvals(ctperm(j)) .LE. 0) THEN
+          num_cold = num_cold + 1
+        END IF
+      END DO
+      IF (num_cold > 0._dp) THEN
+        !IF (CheckPassiveElement(Element)) THEN
+        numberofpassiveneighbours(Element % NodeIndexes(1:n)) = numberofpassiveneighbours(Element % NodeIndexes(1:n)) + 1
+      END IF
 
      !WRITE(*,*) "___________________"
 
@@ -195,6 +212,16 @@ SUBROUTINE SheetSolverhw( Model,Solver,dt,TransientSimulation )
 
   END DO
 
+  ! Correct orphan "left-over" temperate nodes with no connection to the hydrologic system to cold
+  correctedvalues = 0
+  DO I= 1,Model % Mesh % NumberOfNodes
+    IF (coordinationnumber(I) > 0 .AND. ( coordinationnumber(I) .EQ. numberofpassiveneighbours(I))) THEN
+      IF (ctvals(ctperm(I)) > -1.0) correctedvalues = correctedvalues + 1
+      ctvals(ctperm(I)) = -1.0
+    END IF
+  END DO
+  !PRINT *, ParEnv % myPe, ": corrected", correctedvalues, " nodes from temperate to cold"
+  
 !---------------------------------------------------
 ! Calculate water flux 
 !---------------------------------------------------
@@ -593,7 +620,6 @@ CONTAINS
             MASS(i,i) = 1
             END IF
           END DO
-
       END IF
     END IF
     
