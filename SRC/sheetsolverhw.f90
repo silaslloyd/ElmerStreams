@@ -49,7 +49,7 @@ SUBROUTINE SheetSolverhw( Model,Solver,dt,TransientSimulation )
 !------------------------------------------------------------------------------
   TYPE(Element_t),POINTER :: Element
   REAL(KIND=dp) :: Norm
-  INTEGER :: i, j, m, n, n_nei, nb, nd, t, active,passive, istat, correctedvalues   ! , num_cold, n = number of nodes (given element), n = number of degrees of freedom (given element), nd = number of DOFs on the boundary (given element), t = index for..., active = number of active element
+  INTEGER :: i, j, m, n, n_nei, nb, nd, t, active,passive, istat, correctedvalues  , num_cold !, n = number of nodes (given element), n = number of degrees of freedom (given element), nd = number of DOFs on the boundary (given element), t = index for..., active = number of active element
   INTEGER :: iter, maxiter  ! nonlinear iteration number, max number of nonlinear iterations
   LOGICAL :: Found, Newton, BulkUpdate, RHSUpdate, AllocationsDone = .FALSE.
   TYPE(Mesh_t), POINTER :: Mesh 
@@ -168,7 +168,7 @@ SUBROUTINE SheetSolverhw( Model,Solver,dt,TransientSimulation )
       Element => GetActiveElement(t)   ! information about that element
       !WRITE(*,*) "___________________"
       !WRITE(*,*) "ELEMENT", t
-      !num_cold = 0._dp ! REMOVED, AS UNUSED IN THIS CONTEXT
+      num_cold = 0._dp ! REMOVED, AS UNUSED IN THIS CONTEXT
       IF (ParEnv % myPe .NE. Element % partIndex) CYCLE
       n  = Element % TYPE % NumberOfNodes !GetElementNOFNodes()        ! number of nodes
       nd = GetElementNOFDOFs()         ! number of degrees of freedom (DOF)
@@ -177,7 +177,14 @@ SUBROUTINE SheetSolverhw( Model,Solver,dt,TransientSimulation )
 
       ! Set per-node counters for coordination number and number of passive elements for later post-processing step
       coordinationnumber(Element % NodeIndexes(1:n)) = coordinationnumber(Element % NodeIndexes(1:n)) + 1
-      IF (CheckPassiveElement(Element)) THEN
+      DO i=1, n   ! ... for each node within the element (LOCAL nodal index)
+        j = Element % NodeIndexes(i) 
+        IF (ctvals(ctperm(j)) .LE. 0) THEN
+          num_cold = num_cold + 1
+        END IF
+      END DO
+      IF (num_cold > 0._dp) THEN
+        !IF (CheckPassiveElement(Element)) THEN
         numberofpassiveneighbours(Element % NodeIndexes(1:n)) = numberofpassiveneighbours(Element % NodeIndexes(1:n)) + 1
       END IF
 
@@ -213,7 +220,7 @@ SUBROUTINE SheetSolverhw( Model,Solver,dt,TransientSimulation )
       ctvals(ctperm(I)) = -1.0
     END IF
   END DO
-  PRINT *, ParEnv % myPe, ": corrected", correctedvalues, " nodes from temperate to cold"
+  !PRINT *, ParEnv % myPe, ": corrected", correctedvalues, " nodes from temperate to cold"
   
 !---------------------------------------------------
 ! Calculate water flux 
@@ -613,7 +620,6 @@ CONTAINS
             MASS(i,i) = 1
             END IF
           END DO
-
       END IF
     END IF
     
