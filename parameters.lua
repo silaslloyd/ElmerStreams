@@ -74,7 +74,7 @@ GL = 4e6 --2.1*xscale
 L = 2.5*xscale
 GLRes =xscale/2000
 BoundaryRes = xscale/50
-nodes = 64
+nodes = 128*4     -- use 128 x number of available nodes
 
 
 
