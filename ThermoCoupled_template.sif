@@ -76,7 +76,7 @@ Simulation
 
   !! Small initial timesteps for initial adjustment
 
-    Timestep Intervals(4) = 5 5 20 100000
+    Timestep Intervals(4) = 5 5 20 50000 !100000
     Output Intervals(4) = 1 1 1 1
     Timestep Sizes(4) = 1E-8 1E-4 1 5
 
