@@ -134,7 +134,7 @@ SUBROUTINE SheetSolverhw( Model,Solver,dt,TransientSimulation )
         Xperm     => nodalcoords1 % Perm
         xvals => nodalcoords1 % Values
   ELSE
-    CALL FATAL(SolverName, "Pointer to CT Mask not associated")
+    CALL FATAL(SolverName, "Pointer to nodal coordinates not associated")
   END IF
   CALL DefaultStart()
   
@@ -231,6 +231,7 @@ DO t=1, Solver % NumberOfActiveElements   ! for each active element...
   IF (ParEnv % myPe .NE. Element % partIndex) CYCLE
 
   n = GetElementNOFNodes(Element)   ! number of nodes in element
+  nd = GetElementNOFDOFs()         ! number of degrees of freedom (DOF)
   dimsheet = Element % TYPE % DIMENSION
 
   CALL GetElementNodes( ElementNodes )   ! ElementNodes = nodal coordinates (x,y,z) for nodes in the element
@@ -245,10 +246,10 @@ DO t=1, Solver % NumberOfActiveElements   ! for each active element...
   !  nodalhwOld(j) = hwOld(hwOldPerm(j))   ! hw at PREVIOUS iteration
   !END DO
 
-  !CALL CalculateWaterFluxComponents(Element, n, dimsheet, nodalhwOld, q0, qh, QQh)
+  !CALL CalculateWaterFluxComponents(Element, ElementNodes, n, nd, dimsheet, nodalhwOld, q0, qh, QQh)
 
-  !CALL CalculateWaterFlux(Element, n, dimsheet, hw(hwPerm(Element % NodeIndexes(1:n))), &
-  !  hwOld(hwOldPerm(Element % NodeIndexes(1:n))), qw, qwPerm)
+  CALL CalculateWaterFlux(Element, ElementNodes, n, nd, dimsheet, hw(hwPerm(Element % NodeIndexes(1:n))), &
+    hwOld(hwOldPerm(Element % NodeIndexes(1:n))), qw, qwPerm)
 
 END DO 
 
@@ -258,19 +259,24 @@ CONTAINS
 
 ! Calculate the linearised components of the water flux (used in the local matrices)
 ! ------------------------------------------------------------------------------------------
-  SUBROUTINE CalculateWaterFluxComponents(Element, n, dimsheet, nodalhw, q0, qh, QQh)
+  SUBROUTINE CalculateWaterFluxComponents(Element, Nodes, n, nd, dimsheet, nodalhw, q0, qh, QQh)
 ! ------------------------------------------------------------------------------------------
-    REAL(KIND=dp) :: nodalhw(n), dhwdx(n,dimsheet), gradPhi0(n,dimsheet), dBasisdx(n,dimsheet)
+    REAL(KIND=dp) :: nodalhw(n), dhwdx(n,dimsheet), gradPhi0(n,dimsheet)
     REAL(KIND=dp) :: DensityWater(n), LatentHeat(n), Phi0(n), HydraulicConductivity(n), EffectivePressure(n)
     REAL(KIND=dp) :: dEffectivePressuredx(n), ddEffectivePressuredx(n), dHydraulicConductivitydx(n)
     REAL(KIND=dp) :: q0(n,dimsheet), qh(n,dimsheet), QQh(n)
 
-    INTEGER :: i, j, n, dimsheet
+    REAL(KIND=dp) :: Basis(nd), dBasisdx(nd,dimsheet), detJ
+    REAL(KIND=dp) :: u, v, w
+
+    INTEGER :: i, j, n, nd, dimsheet
+    LOGICAL :: stat
     
+    TYPE(Nodes_t) :: Nodes
     TYPE(Element_t), POINTER :: Element
     TYPE(ValueList_t), POINTER :: Material
 
-    CALL GetElementNodes( ElementNodes )
+    ! CALL GetElementNodes( ElementNodes )   ! Is this needed? What does it do?
      
     ! -----------------------------------------------------------
     ! Access parameter values from material section of sif file (nodal values)
@@ -282,6 +288,13 @@ CONTAINS
     ! Calculate the linearised water flux coefficients at each node within the element in question.
     ! --------------------------------------------------------------------------------
     DO i=1, n   ! ... for each node within the element (LOCAL nodal index)
+      
+      ! Get LOCAL nodal coordinates u,v,w from GLOBAL nodal coordinates x,y,z
+      CALL GlobalToLocal(u, v, w, Nodes%x(i), Nodes%y(i), Nodes%z(i), Element, Nodes)
+
+      ! Get basis function values and derivatives at node
+      stat = ElementInfo( Element, Nodes, u, v, w, detJ, Basis, dBasisdx )
+
       j = Element % NodeIndexes(i)  ! almost GLOBAL nodal index (but still need to apply perm)
 
       ! Nodal gradients of water sheet thickness hw and Phi0 (at previous iteration)
@@ -337,10 +350,11 @@ CONTAINS
 ! Calculate the water flux from the linearised components and the hw solutions at the
 ! current and previous iterations
 ! -------------------------------------------------------------------------------
-  SUBROUTINE CalculateWaterFlux(Element, n, dimsheet, nodalhw, nodalhwOld, qw, qwPerm)
+  SUBROUTINE CalculateWaterFlux(Element, Nodes, n, nd, dimsheet, nodalhw, nodalhwOld, qw, qwPerm)
 ! -------------------------------------------------------------------------------
 !   Element = info about the element
 !   n = number of nodes in the element
+!   Nodes = info about the nodes
 !   dimsheet = dimension of the element (e.g. 2D)
 !   nodalhw = values of water sheet thickness on the nodes from the current iteration (just calculated), 
 !             indexed by the local nodal indices
@@ -350,29 +364,40 @@ CONTAINS
 !   qwPerm = permutation for mapping local to global nodal indices (pointer)
 ! ---------------------------------------------------------------------------------
   
-    REAL(KIND=dp) :: nodalhw(n), dhwdx(n,dimsheet), gradPhi0(n,dimsheet), dBasisdx(n,dimsheet)
+    REAL(KIND=dp) :: nodalhw(n), dhwdx(n,dimsheet), gradPhi0(n,dimsheet)
     REAL(KIND=dp) :: nodalhwOld(n), dhwdxOld(n,dimsheet), nodalqw(n,dimsheet)
     REAL(KIND=dp) :: q0(n,dimsheet), qh(n,dimsheet), QQh(n)
 
     REAL(KIND=dp), POINTER :: qw(:)
     INTEGER, POINTER :: qwPerm(:)
 
-    INTEGER :: i, j, n, dimsheet
+    REAL(KIND=dp) :: Basis(nd), dBasisdx(nd,dimsheet), detJ
+    REAL(KIND=dp) :: u, v, w
+
+    INTEGER :: i, j, n, nd, dimsheet
+    LOGICAL :: stat
     
+    TYPE(Nodes_t) :: Nodes
     TYPE(Element_t), POINTER :: Element
     TYPE(ValueList_t), POINTER :: Material
 
-    CALL GetElementNodes( ElementNodes )
+    !CALL GetElementNodes( ElementNodes )
 
     ! Calculate the coefficients of hw, grad(hw) and the constant term in the linearisation
     ! used for the water flux qw in the FEM system (e.g. Newton or Picard)
     ! ---------------------------------------------------------------------------------
-    CALL CalculateWaterFluxComponents(Element, n, dimsheet, nodalhw, q0, qh, QQh)
+    CALL CalculateWaterFluxComponents(Element, Nodes, n, nd, dimsheet, nodalhw, q0, qh, QQh)
 
     ! Loop over elements to compute the water flux
     ! --------------------------------------------------
     DO i=1, n   ! ... for each node within the element (LOCAL nodal index)
       j = Element % NodeIndexes(i)  ! almost GLOBAL nodal index (but still need to apply perm)
+
+      ! Get LOCAL nodal coordinates u,v,w from GLOBAL nodal coordinates x,y,z
+      CALL GlobalToLocal(u, v, w, Nodes%x(i), Nodes%y(i), Nodes%z(i), Element, Nodes)
+
+      ! Get basis function values and derivatives at node
+      stat = ElementInfo( Element, Nodes, u, v, w, detJ, Basis, dBasisdx )
   
       ! Calculate the derivatives of the old and current water sheet thickness hw
       ! ---------------------------------------------------------------------------
@@ -520,7 +545,7 @@ CONTAINS
       
     ! Calculate the linearised components of the water flux (Newton or Picard)
     !---------------------------------------------------------------------------
-    !CALL CalculateWaterFluxComponents(Element, n, dimsheet, nodalhw, q0, qh, QQh)
+    !CALL CalculateWaterFluxComponents(Element, Nodes, n, nd, dimsheet, nodalhw, q0, qh, QQh)
 
     ! Numerical integration:
     !-----------------------
