@@ -65,12 +65,12 @@ SUBROUTINE SheetSolverhw( Model,Solver,dt,TransientSimulation )
   !REAL(KIND=dp), ALLOCATABLE :: nodalhw(:), dhwdx(:,:), gradPhi0(:,:), dBasisdx(:,:), nodalhwOld(:), dhwdxOld(:,:), nodalqw(:,:)
   !REAL(KIND=dp), ALLOCATABLE :: DensityWater(:), LatentHeat(:), Phi0(:), HydraulicConductivity(:), EffectivePressure(:)
   !REAL(KIND=dp), ALLOCATABLE :: dEffectivePressuredx(:), ddEffectivePressuredx(:), dHydraulicConductivitydx(:)
-  !REAL(KIND=dp), ALLOCATABLE :: q0(:,:), qh(:,:), QQh(:)
+  REAL(KIND=dp), ALLOCATABLE :: nodalhw(:), nodalhwOld(:), q0(:,:), qh(:,:), QQh(:)
   REAL(KIND=dp), ALLOCATABLE :: MASS(:,:), STIFF(:,:), LOAD(:), FORCE(:)
 
   CHARACTER(LEN=MAX_NAME_LEN) :: SolverName
 
-  SAVE hwOld, hwOldPerm, MASS, STIFF, LOAD, FORCE, coordinationnumber, numberofpassiveneighbours
+  SAVE hwOld, hwOldPerm, MASS, STIFF, LOAD, FORCE, coordinationnumber, numberofpassiveneighbours, nodalhw, nodalhwOld, q0, qh, QQh
 
 !PointerToSolver => Solver    ! https://fortran-lang.discourse.group/t/understanding-fortran-pointers/1142
 
@@ -92,7 +92,8 @@ SUBROUTINE SheetSolverhw( Model,Solver,dt,TransientSimulation )
     END IF
 
     ALLOCATE( hwOld(m), hwOldPerm(m), MASS(n,n), STIFF(n,n), LOAD(n), FORCE(n), &
-         coordinationnumber(m), numberofpassiveneighbours(m), STAT=istat )
+         coordinationnumber(m), numberofpassiveneighbours(m), nodalhw(m), nodalhwOld(m), &
+         q0(m,dim), qh(m,dim), QQh(m), STAT=istat )
 
     IF ( istat /= 0 ) THEN
       CALL FATAL( 'SheetSolver', 'Memory allocation error' )
@@ -261,12 +262,33 @@ CONTAINS
 ! ------------------------------------------------------------------------------------------
   SUBROUTINE CalculateWaterFluxComponents(Element, Nodes, n, nd, dimsheet, nodalhw, q0, qh, QQh)
 ! ------------------------------------------------------------------------------------------
+!   INPUTS
+!   Element = info about the element
+!   Nodes = info about the nodes
+!   n = number of nodes in the element
+!   nd = number of degrees of freedom
+!   dimsheet = dimension of the element (e.g. 2D)
+!   nodalhw = values of water sheet thickness on the nodes from the current iteration (just calculated), 
+!             indexed by the local nodal indices
+!
+!   OUTPUTS
+!   q0
+!   qh
+!   QQh
+
+    !IMPLICIT NONE
+    
     REAL(KIND=dp) :: nodalhw(n), dhwdx(n,dimsheet), gradPhi0(n,dimsheet)
     REAL(KIND=dp) :: DensityWater(n), LatentHeat(n), Phi0(n), HydraulicConductivity(n), EffectivePressure(n)
     REAL(KIND=dp) :: dEffectivePressuredx(n), ddEffectivePressuredx(n), dHydraulicConductivitydx(n)
-    REAL(KIND=dp) :: q0(n,dimsheet), qh(n,dimsheet), QQh(n)
+    !REAL(KIND=dp) :: nodalhw(n), dhwdx(n,dimsheet), gradPhi0(n,dimsheet)
+    !REAL(KIND=dp), ALLOCATABLE :: DensityWater(:), LatentHeat(:), Phi0(:), HydraulicConductivity(:), EffectivePressure(:)
+    !REAL(KIND=dp), ALLOCATABLE :: dEffectivePressuredx(:), ddEffectivePressuredx(:), dHydraulicConductivitydx(:)
+    REAL(KIND=dp), ALLOCATABLE :: q0(:,:), qh(:,:), QQh(:)
+    !REAL(KIND=dp) :: q0(n,dimsheet), qh(n,dimsheet), QQh(n)
 
-    REAL(KIND=dp) :: Basis(nd), dBasisdx(nd,dimsheet), detJ
+    REAL(KIND=dp), ALLOCATABLE :: Basis(:), dBasisdx(:,:)
+    REAL(KIND=dp) :: detJ
     REAL(KIND=dp) :: u, v, w
 
     INTEGER :: i, j, n, nd, dimsheet
@@ -275,6 +297,12 @@ CONTAINS
     TYPE(Nodes_t) :: Nodes
     TYPE(Element_t), POINTER :: Element
     TYPE(ValueList_t), POINTER :: Material
+
+    ! -----------------------------------------------------------------------------------
+    ! Allocate sizes of the allocatables
+    ! (These should have been automatically deallocated when leaving any of the other subroutines in CONTAINS)
+    ! ------------------------------------------------------------------------------------
+    ALLOCATE(Basis(nd),dBasisdx(nd,dim),q0(n,dimsheet), qh(n,dimsheet), QQh(n))
 
     ! CALL GetElementNodes( ElementNodes )   ! Is this needed? What does it do?
      
@@ -303,16 +331,16 @@ CONTAINS
       !-------------------------------------------------------
       dhwdx(i,1:dimsheet) = nodalhw(i) * dBasisdx(i,1:dimsheet)   ! grad(hw)
       gradPhi0(i,1:dimsheet) = Phi0(i) * dBasisdx(i,1:dimsheet)  ! where N = Phi0 - Phi
-      !WRITE(*,*) 'dhwdx', dhwdx(i,1:dimsheet)
-      !WRITE(*,*) 'gradPhi0', gradPhi0(i,1:dimsheet)
-      !WRITE(*,*) 'Phi0', Phi0(i)
-      !WRITE(*,*) 'dHydraulicConductivitydx', dHydraulicConductivitydx(i)
-      !WRITE(*,*) 'HydraulicConductivity', HydraulicConductivity(i)
-      !WRITE(*,*) 'dEffectivePressuredx', dEffectivePressuredx(i)
-      !WRITE(*,*) 'EffectivePressure', EffectivePressure(i)
-      !WRITE(*,*) 'ddEffectivePressuredx', ddEffectivePressuredx(i)
-      !WRITE(*,*) 'hw', nodalhw(i)
-      !WRITE(*,*) 'dBasisdx', dBasisdx(i,1:dim)
+      WRITE(*,*) 'dhwdx', dhwdx(i,1:dimsheet)
+      WRITE(*,*) 'gradPhi0', gradPhi0(i,1:dimsheet)
+      WRITE(*,*) 'Phi0', Phi0(i)
+      WRITE(*,*) 'dHydraulicConductivitydx', dHydraulicConductivitydx(i)
+      WRITE(*,*) 'HydraulicConductivity', HydraulicConductivity(i)
+      WRITE(*,*) 'dEffectivePressuredx', dEffectivePressuredx(i)
+      WRITE(*,*) 'EffectivePressure', EffectivePressure(i)
+      WRITE(*,*) 'ddEffectivePressuredx', ddEffectivePressuredx(i)
+      WRITE(*,*) 'hw', nodalhw(i)
+      WRITE(*,*) 'dBasisdx', dBasisdx(i,1:dim)
 
       ! Coefficient of hw in flux linearisation
       ! ------------------------------------------
@@ -322,7 +350,7 @@ CONTAINS
       ELSE
         qh(i,1:dimsheet) = 0
       END IF
-      !WRITE(*,*) 'qh', qh(i,1:dimsheet)
+      WRITE(*,*) 'qh', qh(i,1:dimsheet)
 
       ! Coefficient of grad(hw) in flux linearisation
       ! ----------------------------------------------
@@ -331,7 +359,7 @@ CONTAINS
       ELSE
         QQh(i) = -HydraulicConductivity(i)*dEffectivePressuredx(i)
       END IF
-      !WRITE(*,*) 'QQh', QQh(i)
+      WRITE(*,*) 'QQh', QQh(i)
 
       ! Order 1 term in flux linearisation
       ! ------------------------------------
@@ -340,7 +368,7 @@ CONTAINS
       ELSE
         q0(i,1:dimsheet) = HydraulicConductivity(i)*gradPhi0(i,1:dimsheet)
       END IF
-      !WRITE(*,*) 'q0', q0(i,1:dimsheet)
+      WRITE(*,*) 'q0', q0(i,1:dimsheet)
     END DO
 
 ! ----------------------------------------------
@@ -352,6 +380,7 @@ CONTAINS
 ! -------------------------------------------------------------------------------
   SUBROUTINE CalculateWaterFlux(Element, Nodes, n, nd, dimsheet, nodalhw, nodalhwOld, qw, qwPerm)
 ! -------------------------------------------------------------------------------
+!   INPUTS
 !   Element = info about the element
 !   n = number of nodes in the element
 !   Nodes = info about the nodes
@@ -360,18 +389,24 @@ CONTAINS
 !             indexed by the local nodal indices
 !   nodalhwOld = values of water sheet thickness on the nodes from the previous iteration, 
 !             indexed by the local nodal indices
+!   
+!   OUTPUTS
 !   qw = nodal values of the water flux, which this subroutine calculates (pointer)
 !   qwPerm = permutation for mapping local to global nodal indices (pointer)
 ! ---------------------------------------------------------------------------------
+
+    !IMPLICIT NONE
   
     REAL(KIND=dp) :: nodalhw(n), dhwdx(n,dimsheet), gradPhi0(n,dimsheet)
     REAL(KIND=dp) :: nodalhwOld(n), dhwdxOld(n,dimsheet), nodalqw(n,dimsheet)
-    REAL(KIND=dp) :: q0(n,dimsheet), qh(n,dimsheet), QQh(n)
+    REAL(KIND=dp), ALLOCATABLE :: q0(:,:), qh(:,:), QQh(:)
+    !REAL(KIND=dp) :: q0(n,dimsheet), qh(n,dimsheet), QQh(n)
 
     REAL(KIND=dp), POINTER :: qw(:)
     INTEGER, POINTER :: qwPerm(:)
 
-    REAL(KIND=dp) :: Basis(nd), dBasisdx(nd,dimsheet), detJ
+    REAL(KIND=dp), ALLOCATABLE :: Basis(:), dBasisdx(:,:)
+    REAL(KIND=dp) :: detJ
     REAL(KIND=dp) :: u, v, w
 
     INTEGER :: i, j, n, nd, dimsheet
@@ -380,6 +415,12 @@ CONTAINS
     TYPE(Nodes_t) :: Nodes
     TYPE(Element_t), POINTER :: Element
     TYPE(ValueList_t), POINTER :: Material
+
+    ! -----------------------------------------------------------------------------------
+    ! Allocate sizes of the allocatables
+    ! (These should have been automatically deallocated when leaving any of the other subroutines in CONTAINS)
+    ! ------------------------------------------------------------------------------------
+    ALLOCATE(Basis(nd),dBasisdx(nd,dim)) !,q0(n,dimsheet), qh(n,dimsheet), QQh(n))
 
     !CALL GetElementNodes( ElementNodes )
 
@@ -436,6 +477,9 @@ CONTAINS
   SUBROUTINE GetParameters(Element, Material, n, DensityWater, LatentHeat, Phi0, EffectivePressure, HydraulicConductivity, &
     dEffectivePressuredx, ddEffectivePressuredx, dHydraulicConductivitydx)
 ! -----------------------------------------------------------------------------
+
+  !IMPLICIT NONE
+    
   REAL(KIND=dp) :: DensityWater(n), LatentHeat(n), Phi0(n), EffectivePressure(n), HydraulicConductivity(n), &
     dEffectivePressuredx(n), ddEffectivePressuredx(n), dHydraulicConductivitydx(n)
   INTEGER :: n   ! number of nodes
@@ -498,6 +542,9 @@ CONTAINS
 !------------------------------------------------------------------------------
   SUBROUTINE LocalMatrix( Element, n, nd, dim, dimsheet, nodalhw, ctperm, ctvals)
 !------------------------------------------------------------------------------
+
+    !IMPLICIT NONE
+    
     INTEGER :: n, nd, dimsheet, num_cold
     TYPE(Element_t), POINTER :: Element
 !------------------------------------------------------------------------------
@@ -514,7 +561,8 @@ CONTAINS
     REAL(KIND=dp) :: QQhAtIp
     REAL(KIND=dp) :: dqdhAtIP(dimsheet), q0AtIP(dimsheet), dhwdxAtIP(dimsheet), gradPhi0AtIP(dimsheet), graddNdhAtIP(dimsheet)
     REAL(KIND=dp) :: qhAtIP(dimsheet), gradNAtIP(dimsheet)
-    REAL(KIND=dp) :: Basis(nd),dBasisdx(nd,dim),DetJ
+    !REAL(KIND=dp), ALLOCATABLE :: Basis(:), dBasisdx(:,:)
+    REAL(KIND=dp) :: Basis(nd), dBasisdx(nd,dim), DetJ
     REAL(KIND=dp) :: MASS(nd,nd), STIFF(nd,nd), FORCE(nd), LOAD(n)
     LOGICAL :: Stat,Found
     INTEGER :: i,t,p,q,dim, rankA, rankM
@@ -523,6 +571,11 @@ CONTAINS
     TYPE(Nodes_t) :: Nodes
     SAVE Nodes
 !------------------------------------------------------------------------------
+      ! -----------------------------------------------------------------------------------
+    ! Allocate sizes of the allocatables
+    ! (These should have been automatically deallocated when leaving any of the other subroutines in CONTAINS)
+    ! ------------------------------------------------------------------------------------
+    !ALLOCATE(Basis(nd),dBasisdx(nd,dimsheet))
 
     dim = CoordinateSystemDimension()
     dimsheet = Element % TYPE % DIMENSION  ! should be 2 when because the hydrology solver is applied on a 2D boundary
