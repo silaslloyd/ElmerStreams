@@ -65,12 +65,13 @@ SUBROUTINE SheetSolverhw( Model,Solver,dt,TransientSimulation )
   !REAL(KIND=dp), ALLOCATABLE :: nodalhw(:), dhwdx(:,:), gradPhi0(:,:), dBasisdx(:,:), nodalhwOld(:), dhwdxOld(:,:), nodalqw(:,:)
   !REAL(KIND=dp), ALLOCATABLE :: DensityWater(:), LatentHeat(:), Phi0(:), HydraulicConductivity(:), EffectivePressure(:)
   !REAL(KIND=dp), ALLOCATABLE :: dEffectivePressuredx(:), ddEffectivePressuredx(:), dHydraulicConductivitydx(:)
-  REAL(KIND=dp), ALLOCATABLE :: nodalhw(:), nodalhwOld(:), q0(:,:), qh(:,:), QQh(:)
+  REAL(KIND=dp), ALLOCATABLE :: nodalhw(:), nodalhwOld(:) !, q0(:,:), qh(:,:), QQh(:)
   REAL(KIND=dp), ALLOCATABLE :: MASS(:,:), STIFF(:,:), LOAD(:), FORCE(:)
 
   CHARACTER(LEN=MAX_NAME_LEN) :: SolverName
 
-  SAVE hwOld, hwOldPerm, MASS, STIFF, LOAD, FORCE, coordinationnumber, numberofpassiveneighbours, nodalhw, nodalhwOld, q0, qh, QQh
+  SAVE hwOld, hwOldPerm, MASS, STIFF, LOAD, FORCE, coordinationnumber, numberofpassiveneighbours, &
+   nodalhw, nodalhwOld !, q0, qh, QQh
 
 !PointerToSolver => Solver    ! https://fortran-lang.discourse.group/t/understanding-fortran-pointers/1142
 
@@ -92,8 +93,9 @@ SUBROUTINE SheetSolverhw( Model,Solver,dt,TransientSimulation )
     END IF
 
     ALLOCATE( hwOld(m), hwOldPerm(m), MASS(n,n), STIFF(n,n), LOAD(n), FORCE(n), &
-         coordinationnumber(m), numberofpassiveneighbours(m), nodalhw(m), nodalhwOld(m), &
-         q0(m,dim), qh(m,dim), QQh(m), STAT=istat )
+         coordinationnumber(m), numberofpassiveneighbours(m), STAT=istat )
+         ! nodalhw(m), nodalhwOld(m), &
+         !q0(m,dim), qh(m,dim), QQh(m), 
 
     IF ( istat /= 0 ) THEN
       CALL FATAL( 'SheetSolver', 'Memory allocation error' )
@@ -249,8 +251,22 @@ DO t=1, Solver % NumberOfActiveElements   ! for each active element...
 
   !CALL CalculateWaterFluxComponents(Element, ElementNodes, n, nd, dimsheet, nodalhwOld, q0, qh, QQh)
 
-  CALL CalculateWaterFlux(Element, ElementNodes, n, nd, dimsheet, hw(hwPerm(Element % NodeIndexes(1:n))), &
-    hwOld(hwOldPerm(Element % NodeIndexes(1:n))), qw, qwPerm)
+  nodalhw = hw(hwPerm(Element % NodeIndexes(1:n)))
+  nodalhwOld = hwOld(hwOldPerm(Element % NodeIndexes(1:n)))
+
+  WRITE(*,*) '------------------------', '------------------------'
+  WRITE(*,*) 'START CalculateWaterFlux, element # =', t
+  WRITE(*,*) 'out of N active elements = ', Solver % NumberOfActiveElements
+
+  !CALL CalculateWaterFlux(Element, ElementNodes, n, nd, dimsheet, hw(hwPerm(Element % NodeIndexes(1:n))), &
+  !  hwOld(hwOldPerm(Element % NodeIndexes(1:n))), qw, qwPerm)
+
+  CALL CalculateWaterFlux(Element, ElementNodes, n, nd, dimsheet, nodalhw, &
+    nodalhwOld, qw, qwPerm)
+
+  WRITE(*,*) 'END CalculateWaterFlux, element # =', t
+  WRITE(*,*) 'out of N active elements = ', Solver % NumberOfActiveElements
+  WRITE(*,*) '------------------------', '------------------------'
 
 END DO 
 
@@ -302,7 +318,7 @@ CONTAINS
     ! Allocate sizes of the allocatables
     ! (These should have been automatically deallocated when leaving any of the other subroutines in CONTAINS)
     ! ------------------------------------------------------------------------------------
-    ALLOCATE(Basis(nd),dBasisdx(nd,dim),q0(n,dimsheet), qh(n,dimsheet), QQh(n))
+    ALLOCATE(Basis(nd),dBasisdx(nd,dim)) !,q0(n,dimsheet), qh(n,dimsheet), QQh(n))
 
     ! CALL GetElementNodes( ElementNodes )   ! Is this needed? What does it do?
      
@@ -331,6 +347,8 @@ CONTAINS
       !-------------------------------------------------------
       dhwdx(i,1:dimsheet) = nodalhw(i) * dBasisdx(i,1:dimsheet)   ! grad(hw)
       gradPhi0(i,1:dimsheet) = Phi0(i) * dBasisdx(i,1:dimsheet)  ! where N = Phi0 - Phi
+      WRITE(*,*) 'i =', i
+      WRITE(*,*) 'out of n =', n
       WRITE(*,*) 'dhwdx', dhwdx(i,1:dimsheet)
       WRITE(*,*) 'gradPhi0', gradPhi0(i,1:dimsheet)
       WRITE(*,*) 'Phi0', Phi0(i)
@@ -397,9 +415,12 @@ CONTAINS
 
     !IMPLICIT NONE
   
-    REAL(KIND=dp) :: nodalhw(n), dhwdx(n,dimsheet), gradPhi0(n,dimsheet)
-    REAL(KIND=dp) :: nodalhwOld(n), dhwdxOld(n,dimsheet), nodalqw(n,dimsheet)
+    REAL(KIND=dp), ALLOCATABLE :: nodalhw(:), nodalhwOld(:) !, gradPhi0(:,:)
+    !REAL(KIND=dp) :: nodalhw(n), nodalhwOld(n) !, gradPhi0(:,:)
+    REAL(KIND=dp), ALLOCATABLE :: dhwdx(:,:), dhwdxOld(:,:), nodalqw(:,:)
     REAL(KIND=dp), ALLOCATABLE :: q0(:,:), qh(:,:), QQh(:)
+    !REAL(KIND=dp) :: nodalhw(n), dhwdx(n,dimsheet), gradPhi0(n,dimsheet)
+    !REAL(KIND=dp) :: nodalhwOld(n), dhwdxOld(n,dimsheet), nodalqw(n,dimsheet)
     !REAL(KIND=dp) :: q0(n,dimsheet), qh(n,dimsheet), QQh(n)
 
     REAL(KIND=dp), POINTER :: qw(:)
@@ -420,18 +441,29 @@ CONTAINS
     ! Allocate sizes of the allocatables
     ! (These should have been automatically deallocated when leaving any of the other subroutines in CONTAINS)
     ! ------------------------------------------------------------------------------------
-    ALLOCATE(Basis(nd),dBasisdx(nd,dim)) !,q0(n,dimsheet), qh(n,dimsheet), QQh(n))
+    ALLOCATE(Basis(nd),dBasisdx(nd,dim),q0(n,dimsheet), qh(n,dimsheet), QQh(n), & ! nodalhw(n), nodalhwOld(n), &
+    dhwdx(n,dimsheet), dhwdxOld(n,dimsheet), nodalqw(n,dimsheet))
 
     !CALL GetElementNodes( ElementNodes )
 
     ! Calculate the coefficients of hw, grad(hw) and the constant term in the linearisation
     ! used for the water flux qw in the FEM system (e.g. Newton or Picard)
     ! ---------------------------------------------------------------------------------
+    WRITE(*,*) '------------------------', '------------------------'
+    WRITE(*,*) 'START Components', ' inside CalculateWaterFlux'
     CALL CalculateWaterFluxComponents(Element, Nodes, n, nd, dimsheet, nodalhw, q0, qh, QQh)
+    WRITE(*,*) 'END Components', ' inside CalculateWaterFlux'
+    WRITE(*,*) '------------------------', '------------------------'
 
     ! Loop over elements to compute the water flux
     ! --------------------------------------------------
+    WRITE(*,*) 'START separate node loop', ' inside CalculateWaterFlux'
+    WRITE(*,*) '------------------------', '------------------------'
     DO i=1, n   ! ... for each node within the element (LOCAL nodal index)
+      
+      WRITE(*,*) 'i =', i
+      WRITE(*,*) 'out of n =', n
+
       j = Element % NodeIndexes(i)  ! almost GLOBAL nodal index (but still need to apply perm)
 
       ! Get LOCAL nodal coordinates u,v,w from GLOBAL nodal coordinates x,y,z
@@ -466,6 +498,8 @@ CONTAINS
       END DO
 
     END DO
+    WRITE(*,*) 'END separate node loop', ' inside CalculateWaterFlux'
+    WRITE(*,*) '------------------------', '------------------------'
   
 ! ----------------------------------------
   END SUBROUTINE CalculateWaterFlux
