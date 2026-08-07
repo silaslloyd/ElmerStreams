@@ -261,7 +261,7 @@ DO t=1, Solver % NumberOfActiveElements   ! for each active element...
   !CALL CalculateWaterFlux(Element, ElementNodes, n, nd, dimsheet, hw(hwPerm(Element % NodeIndexes(1:n))), &
   !  hwOld(hwOldPerm(Element % NodeIndexes(1:n))), qw, qwPerm)
 
-  CALL CalculateWaterFlux(Element, ElementNodes, n, nd, dimsheet, nodalhw, &
+  CALL CalculateWaterFlux(Element, ElementNodes, n, nd, dimsheet, qwNDOFs, nodalhw, &
     nodalhwOld, qw, qwPerm)
 
   WRITE(*,*) 'END CalculateWaterFlux, element # =', t
@@ -396,7 +396,7 @@ CONTAINS
 ! Calculate the water flux from the linearised components and the hw solutions at the
 ! current and previous iterations
 ! -------------------------------------------------------------------------------
-  SUBROUTINE CalculateWaterFlux(Element, Nodes, n, nd, dimsheet, nodalhw, nodalhwOld, qw, qwPerm)
+  SUBROUTINE CalculateWaterFlux(Element, Nodes, n, nd, dimsheet, qwNDOFs, nodalhw, nodalhwOld, qw, qwPerm)
 ! -------------------------------------------------------------------------------
 !   INPUTS
 !   Element = info about the element
@@ -415,8 +415,7 @@ CONTAINS
 
     !IMPLICIT NONE
   
-    REAL(KIND=dp), ALLOCATABLE :: nodalhw(:), nodalhwOld(:) !, gradPhi0(:,:)
-    !REAL(KIND=dp) :: nodalhw(n), nodalhwOld(n) !, gradPhi0(:,:)
+    REAL(KIND=dp), INTENT(IN) :: nodalhw(n), nodalhwOld(n)
     REAL(KIND=dp), ALLOCATABLE :: dhwdx(:,:), dhwdxOld(:,:), nodalqw(:,:)
     REAL(KIND=dp), ALLOCATABLE :: q0(:,:), qh(:,:), QQh(:)
     !REAL(KIND=dp) :: nodalhw(n), dhwdx(n,dimsheet), gradPhi0(n,dimsheet)
@@ -425,12 +424,13 @@ CONTAINS
 
     REAL(KIND=dp), POINTER :: qw(:)
     INTEGER, POINTER :: qwPerm(:)
+    INTEGER, INTENT(IN) :: n, nd, dimsheet, qwNDOFs
 
     REAL(KIND=dp), ALLOCATABLE :: Basis(:), dBasisdx(:,:)
     REAL(KIND=dp) :: detJ
     REAL(KIND=dp) :: u, v, w
 
-    INTEGER :: i, j, n, nd, dimsheet
+    INTEGER :: i, j, k
     LOGICAL :: stat
     
     TYPE(Nodes_t) :: Nodes
@@ -442,7 +442,7 @@ CONTAINS
     ! (These should have been automatically deallocated when leaving any of the other subroutines in CONTAINS)
     ! ------------------------------------------------------------------------------------
     ALLOCATE(Basis(nd),dBasisdx(nd,dim),q0(n,dimsheet), qh(n,dimsheet), QQh(n), & ! nodalhw(n), nodalhwOld(n), &
-    dhwdx(n,dimsheet), dhwdxOld(n,dimsheet), nodalqw(n,dimsheet))
+    dhwdx(n,dimsheet), dhwdxOld(n,dimsheet), nodalqw(n,qwNDOFs))
 
     !CALL GetElementNodes( ElementNodes )
 
@@ -483,12 +483,12 @@ CONTAINS
       ! stacked together, i.e qx1, qy1, qz1, qx2, qy2, qz2, ...
       ! So ,to reassmeble:
 
-      DO k = 1,dimsheet
+      DO k = 1,MIN(dimsheet,qwNDOFs)
         ! Calculate nodalqw only for the dimensions of the water sheet
         nodalqw(i,k) = q0(i,k) + qh(i,k)*nodalhwOld(i) + QQh(i)*dhwdxOld(i,k)  ! value of each component (k) of qw at each node (i) within the element
       END DO
       
-      DO k = dimsheet+1,qwNDOFs  ! qwNDOFs should be equal to dim (3)
+      DO k = MIN(dimsheet,qwNDOFs)+1,qwNDOFs  ! qwNDOFs should be equal to dim (3)
         ! Set the z component of the water flux to zero, since this is meaningless on out 2D surface
         nodalqw(i,k) = 0
       END DO
