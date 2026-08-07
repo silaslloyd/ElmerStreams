@@ -437,6 +437,11 @@ CONTAINS
     TYPE(Element_t), POINTER :: Element
     TYPE(ValueList_t), POINTER :: Material
 
+    ! Print error message if the number of DOFs of the water flux is non-positive
+    IF (qwNDOFs < 1) THEN
+      CALL FATAL(SolverName, 'Invalid number of water flux DOFs in CalculateWaterFlux')
+    END IF
+
     ! -----------------------------------------------------------------------------------
     ! Allocate sizes of the allocatables
     ! (These should have been automatically deallocated when leaving any of the other subroutines in CONTAINS)
@@ -493,6 +498,16 @@ CONTAINS
         nodalqw(i,k) = 0
       END DO
 
+      ! ARRAY BOUNDS CHECK
+      ! Check that the components of the flux pointer qw that we are trying to write into actually exist
+      IF (qwPerm(j) < 1) THEN
+        CALL FATAL(SolverName, 'Invalid water flux permutation index in CalculateWaterFlux')
+      END IF
+      IF ((qwPerm(j)-1)*qwNDOFs + qwNDOFs > SIZE(qw)) THEN
+        CALL FATAL(SolverName, 'Water flux write would exceed array bounds in CalculateWaterFlux')
+      END IF
+
+      ! Stack the nodalqw values into the pointer qw
       DO k = 1,qwNDOFs
         qw((qwPerm(j)-1)*qwNDOFs+k) = nodalqw(i,k)  ! value of each global node (qwPerm(j))
       END DO
