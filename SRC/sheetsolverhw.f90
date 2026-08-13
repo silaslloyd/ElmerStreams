@@ -62,9 +62,6 @@ SUBROUTINE SheetSolverhw( Model,Solver,dt,TransientSimulation )
   INTEGER, ALLOCATABLE :: hwOldPerm(:), coordinationnumber(:), numberofpassiveneighbours(:)  ! copy of values to retain when pointer is overwritten by new iteration values
   TYPE(Nodes_t) :: ElementNodes
   INTEGER :: dim, qwNDOFs, k, rankA, rankM, dimsheet
-  !REAL(KIND=dp), ALLOCATABLE :: nodalhw(:), dhwdx(:,:), gradPhi0(:,:), dBasisdx(:,:), nodalhwOld(:), dhwdxOld(:,:), nodalqw(:,:)
-  !REAL(KIND=dp), ALLOCATABLE :: DensityWater(:), LatentHeat(:), Phi0(:), HydraulicConductivity(:), EffectivePressure(:)
-  !REAL(KIND=dp), ALLOCATABLE :: dEffectivePressuredx(:), ddEffectivePressuredx(:), dHydraulicConductivitydx(:)
   REAL(KIND=dp), ALLOCATABLE :: nodalhw(:), nodalhwOld(:) !, q0(:,:), qh(:,:), QQh(:)
   REAL(KIND=dp), ALLOCATABLE :: MASS(:,:), STIFF(:,:), LOAD(:), FORCE(:)
 
@@ -250,9 +247,9 @@ DO t=1, Solver % NumberOfActiveElements   ! for each active element...
   nodalhw = hw(hwPerm(Element % NodeIndexes(1:n)))
   nodalhwOld = hwOld(hwOldPerm(Element % NodeIndexes(1:n)))
 
-  WRITE(*,*) '------------------------', '------------------------'
-  WRITE(*,*) 'START CalculateWaterFlux, element # =', t
-  WRITE(*,*) 'out of N active elements = ', Solver % NumberOfActiveElements
+  !WRITE(*,*) '------------------------', '------------------------'
+  !WRITE(*,*) 'START CalculateWaterFlux, element # =', t
+  !WRITE(*,*) 'out of N active elements = ', Solver % NumberOfActiveElements
 
   !CALL CalculateWaterFlux(Element, ElementNodes, n, nd, dimsheet, hw(hwPerm(Element % NodeIndexes(1:n))), &
   !  hwOld(hwOldPerm(Element % NodeIndexes(1:n))), qw, qwPerm)
@@ -260,9 +257,9 @@ DO t=1, Solver % NumberOfActiveElements   ! for each active element...
   CALL CalculateWaterFlux(Element, ElementNodes, n, nd, dimsheet, qwNDOFs, nodalhw, &
     nodalhwOld, qw, qwPerm)
 
-  WRITE(*,*) 'END CalculateWaterFlux, element # =', t
-  WRITE(*,*) 'out of N active elements = ', Solver % NumberOfActiveElements
-  WRITE(*,*) '------------------------', '------------------------'
+  !WRITE(*,*) 'END CalculateWaterFlux, element # =', t
+  !WRITE(*,*) 'out of N active elements = ', Solver % NumberOfActiveElements
+  !WRITE(*,*) '------------------------', '------------------------'
 
 END DO 
 
@@ -293,12 +290,7 @@ CONTAINS
     REAL(KIND=dp) :: nodalhw(n), dhwdx(n,dimsheet), gradPhi0(n,dimsheet)
     REAL(KIND=dp) :: DensityWater(n), LatentHeat(n), Phi0(n), HydraulicConductivity(n), EffectivePressure(n)
     REAL(KIND=dp) :: dEffectivePressuredx(n), ddEffectivePressuredx(n), dHydraulicConductivitydx(n)
-    !REAL(KIND=dp) :: nodalhw(n), dhwdx(n,dimsheet), gradPhi0(n,dimsheet)
-    !REAL(KIND=dp), ALLOCATABLE :: DensityWater(:), LatentHeat(:), Phi0(:), HydraulicConductivity(:), EffectivePressure(:)
-    !REAL(KIND=dp), ALLOCATABLE :: dEffectivePressuredx(:), ddEffectivePressuredx(:), dHydraulicConductivitydx(:)
     REAL(KIND=dp), ALLOCATABLE :: q0(:,:), qh(:,:), QQh(:)
-    !REAL(KIND=dp) :: q0(n,dimsheet), qh(n,dimsheet), QQh(n)
-
     REAL(KIND=dp), ALLOCATABLE :: Basis(:), dBasisdx(:,:)
     REAL(KIND=dp) :: detJ
     REAL(KIND=dp) :: u, v, w
@@ -341,18 +333,18 @@ CONTAINS
       !-------------------------------------------------------
       dhwdx(i,1:dimsheet) = nodalhw(i) * dBasisdx(i,1:dimsheet)   ! grad(hw)
       gradPhi0(i,1:dimsheet) = Phi0(i) * dBasisdx(i,1:dimsheet)  ! where N = Phi0 - Phi
-      WRITE(*,*) 'i =', i
-      WRITE(*,*) 'out of n =', n
-      WRITE(*,*) 'dhwdx', dhwdx(i,1:dimsheet)
-      WRITE(*,*) 'gradPhi0', gradPhi0(i,1:dimsheet)
-      WRITE(*,*) 'Phi0', Phi0(i)
-      WRITE(*,*) 'dHydraulicConductivitydx', dHydraulicConductivitydx(i)
-      WRITE(*,*) 'HydraulicConductivity', HydraulicConductivity(i)
-      WRITE(*,*) 'dEffectivePressuredx', dEffectivePressuredx(i)
-      WRITE(*,*) 'EffectivePressure', EffectivePressure(i)
-      WRITE(*,*) 'ddEffectivePressuredx', ddEffectivePressuredx(i)
-      WRITE(*,*) 'hw', nodalhw(i)
-      WRITE(*,*) 'dBasisdx', dBasisdx(i,1:dim)
+      !WRITE(*,*) 'i =', i
+      !WRITE(*,*) 'out of n =', n
+      !WRITE(*,*) 'dhwdx', dhwdx(i,1:dimsheet)
+      !WRITE(*,*) 'gradPhi0', gradPhi0(i,1:dimsheet)
+      !WRITE(*,*) 'Phi0', Phi0(i)
+      !WRITE(*,*) 'dHydraulicConductivitydx', dHydraulicConductivitydx(i)
+      !WRITE(*,*) 'HydraulicConductivity', HydraulicConductivity(i)
+      !WRITE(*,*) 'dEffectivePressuredx', dEffectivePressuredx(i)
+      !WRITE(*,*) 'EffectivePressure', EffectivePressure(i)
+      !WRITE(*,*) 'ddEffectivePressuredx', ddEffectivePressuredx(i)
+      !WRITE(*,*) 'hw', nodalhw(i)
+      !WRITE(*,*) 'dBasisdx', dBasisdx(i,1:dim)
 
       ! Coefficient of hw in flux linearisation
       ! ------------------------------------------
@@ -412,9 +404,6 @@ CONTAINS
     REAL(KIND=dp), INTENT(IN) :: nodalhw(n), nodalhwOld(n)
     REAL(KIND=dp), ALLOCATABLE :: dhwdx(:,:), dhwdxOld(:,:), nodalqw(:,:)
     REAL(KIND=dp), ALLOCATABLE :: q0(:,:), qh(:,:), QQh(:)
-    !REAL(KIND=dp) :: nodalhw(n), dhwdx(n,dimsheet), gradPhi0(n,dimsheet)
-    !REAL(KIND=dp) :: nodalhwOld(n), dhwdxOld(n,dimsheet), nodalqw(n,dimsheet)
-    !REAL(KIND=dp) :: q0(n,dimsheet), qh(n,dimsheet), QQh(n)
 
     REAL(KIND=dp), POINTER :: qw(:)
     INTEGER, POINTER :: qwPerm(:)
@@ -529,7 +518,7 @@ CONTAINS
   LOGICAL :: Found = .FALSE.
   TYPE(Element_t), POINTER :: Element
   TYPE(ValueList_t), POINTER :: Material
-  TYPE(Nodes_t) :: Nodes
+  !TYPE(Nodes_t) :: Nodes
 
   !CALL GetElementNodes( Nodes )
 
@@ -640,7 +629,7 @@ CONTAINS
       dEffectivePressuredx, ddEffectivePressuredx, dHydraulicConductivitydx)
 
       
-    ! Calculate the linearised components of the water flux (Newton or Picard)
+    ! Calculate the linearised components of the water flux (nodal values, Newton or Picard)
     !---------------------------------------------------------------------------
     CALL CalculateWaterFluxComponents(Element, Nodes, n, nd, dimsheet, nodalhw, q0, qh, QQh)
 
