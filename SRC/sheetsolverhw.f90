@@ -79,7 +79,7 @@ SUBROUTINE SheetSolverhw( Model,Solver,dt,TransientSimulation )
 
   SolverName = 'SheetSolverhw'
 
-! Details of mesh - IS THIS NEEDED HERE?
+! Details of mesh - needed for allocations
   Mesh => Solver % Mesh
   dim = Mesh % MeshDim     ! 1, 2 or 3 D
   m = Mesh % NumberOfNodes      ! Number of nodes in the mesh
@@ -124,6 +124,7 @@ SUBROUTINE SheetSolverhw( Model,Solver,dt,TransientSimulation )
   CALL FATAL("sheetsolverhw", "Pointer to Water Flux not associated")
   END IF
 
+  ! Point to cold temperate mask
   coldtempmask => VariableGet( Mesh % Variables, 'ColdTempMask' )
   IF ( ASSOCIATED( coldtempmask ) ) THEN
         ctperm     => coldtempmask % Perm
@@ -132,6 +133,7 @@ SUBROUTINE SheetSolverhw( Model,Solver,dt,TransientSimulation )
     CALL FATAL(SolverName, "Pointer to CT Mask not associated")
   END IF
 
+  ! Point to x,y,z coordinates of the nodes
   nodalcoords1 => VariableGet( Mesh % Variables, 'nodalcoords 1' )
   IF ( ASSOCIATED( coldtempmask ) ) THEN
         Xperm     => nodalcoords1 % Perm
@@ -163,29 +165,33 @@ SUBROUTINE SheetSolverhw( Model,Solver,dt,TransientSimulation )
     Active = GetNOFActive()   ! number of active elements (i.e. not passive)
     !WRITE(*,*) Active, " active elements"
 
-    ! per-node counter initialization
-    coordinationnumber=0
-    numberofpassiveneighbours=0
+    ! Per-node counter initialization
+    coordinationnumber = 0           ! number of elements the node is part of
+    numberofpassiveneighbours = 0    ! number of cold-node-containing elements the node is part of
     
     DO t=1,Active   ! for each active element..
       Element => GetActiveElement(t)   ! information about that element
       !WRITE(*,*) "___________________"
       !WRITE(*,*) "ELEMENT", t
-      num_cold = 0._dp ! REMOVED, AS UNUSED IN THIS CONTEXT
+      num_cold = 0._dp   ! counter for number of cold nodes in the element
       IF (ParEnv % myPe .NE. Element % partIndex) CYCLE
       n  = Element % TYPE % NumberOfNodes !GetElementNOFNodes()        ! number of nodes
       nd = GetElementNOFDOFs()         ! number of degrees of freedom (DOF)
       nb = GetElementNOFBDOFs()        ! number of BUBBLES DOFs (NOT boundary DOFs)
-      dimsheet = Element % TYPE % DIMENSION
+      dimsheet = Element % TYPE % DIMENSION   ! dimension of the water sheet
 
       ! Set per-node counters for coordination number and number of passive elements for later post-processing step
+      ! Coordination number = how many elements a node is part of
+      ! Number of passive neighbours = how many cold-node-containing elements a node is part of
       coordinationnumber(Element % NodeIndexes(1:n)) = coordinationnumber(Element % NodeIndexes(1:n)) + 1
-      DO i=1, n   ! ... for each node within the element (LOCAL nodal index)
+      DO i=1, n   ! For each node within the element (LOCAL nodal index)
         j = Element % NodeIndexes(i) 
         IF (ctvals(ctperm(j)) .LE. 0) THEN
-          num_cold = num_cold + 1
+          num_cold = num_cold + 1   ! count numbre of cold nodes (i.e. with coldtempmask = -1)
         END IF
       END DO
+      ! If the element has any cold nodes, add 1 to the numberofpassiveneighbours
+      ! for each node in that element.
       IF (num_cold > 0._dp) THEN
         !IF (CheckPassiveElement(Element)) THEN
         numberofpassiveneighbours(Element % NodeIndexes(1:n)) = numberofpassiveneighbours(Element % NodeIndexes(1:n)) + 1
@@ -198,8 +204,6 @@ SUBROUTINE SheetSolverhw( Model,Solver,dt,TransientSimulation )
     
     END DO
 
-    !CALL DefaultFinishBulkAssembly()
-    ! If the second and third entries are TRUE logicals, the matrices and force vector will be saved
     BulkUpdate = .TRUE.   ! mass and stiffness matrices are saved if true
     RHSUpdate = .TRUE.    ! force vector is saved if true
     CALL DefaultFinishBulkAssembly(Solver,BulkUpdate,RHSUpdate)
@@ -208,6 +212,7 @@ SUBROUTINE SheetSolverhw( Model,Solver,dt,TransientSimulation )
     CALL DefaultFinishBoundaryAssembly()
     CALL DefaultFinishAssembly()
     CALL DefaultDirichletBCs()
+
     ! And finally, solve:
     !--------------------
     Norm = DefaultSolve()
@@ -216,6 +221,8 @@ SUBROUTINE SheetSolverhw( Model,Solver,dt,TransientSimulation )
   END DO
 
   ! Correct orphan "left-over" temperate nodes with no connection to the hydrologic system to cold
+  ! i.e. if an all the elements that a node is part of are passive elements,
+  ! then set the coldtempmask value for that node to be -1 (treated as cold)
   correctedvalues = 0
   DO I= 1,Model % Mesh % NumberOfNodes
     IF (coordinationnumber(I) > 0 .AND. ( coordinationnumber(I) .EQ. numberofpassiveneighbours(I))) THEN
@@ -233,24 +240,13 @@ DO t=1, Solver % NumberOfActiveElements   ! for each active element...
   Element => GetActiveElement(t,Solver)
   IF (ParEnv % myPe .NE. Element % partIndex) CYCLE
 
-  n = GetElementNOFNodes(Element)   ! number of nodes in element
-  nd = GetElementNOFDOFs()         ! number of degrees of freedom (DOF)
-  dimsheet = Element % TYPE % DIMENSION
+  n = GetElementNOFNodes(Element)         ! number of nodes in element
+  nd = GetElementNOFDOFs()                ! number of degrees of freedom (DOF)
+  dimsheet = Element % TYPE % DIMENSION   ! dimension of water sheet
 
-  CALL GetElementNodes( ElementNodes )   ! ElementNodes = nodal coordinates (x,y,z) for nodes in the element
+  CALL GetElementNodes( ElementNodes )    ! ElementNodes = nodal coordinates (x,y,z) for nodes in the element
 
-  !CALL GetParameters(Element, Material, n, DensityWater, LatentHeat, Phi0, EffectivePressure, HydraulicConductivity, &
-  !  dEffectivePressuredx, ddEffectivePressuredx, dHydraulicConductivitydx) ! Get parameter values (at nodes) from sif file
-  
-  ! Nodal values of water sheet thickness hw from CURRENT (just calculated) and PREVIOUS iteration
-  !DO i=1, n   ! ... for each node within the element (LOCAL nodal index)
-  !  j = Element % NodeIndexes(i)  ! almost GLOBAL nodal index (but still need to apply perm)
-  !  nodalhw(j) = hw(hwPerm(j))   ! hw at CURRENT iteration (just calculated)
-  !  nodalhwOld(j) = hwOld(hwOldPerm(j))   ! hw at PREVIOUS iteration
-  !END DO
-
-  !CALL CalculateWaterFluxComponents(Element, ElementNodes, n, nd, dimsheet, nodalhwOld, q0, qh, QQh)
-
+  ! Nodal values of hw at the current and previous timestep
   nodalhw = hw(hwPerm(Element % NodeIndexes(1:n)))
   nodalhwOld = hwOld(hwOldPerm(Element % NodeIndexes(1:n)))
 
@@ -319,8 +315,6 @@ CONTAINS
     ! (These should have been automatically deallocated when leaving any of the other subroutines in CONTAINS)
     ! ------------------------------------------------------------------------------------
     ALLOCATE(Basis(nd),dBasisdx(nd,dim)) !,q0(n,dimsheet), qh(n,dimsheet), QQh(n))
-
-    ! CALL GetElementNodes( ElementNodes )   ! Is this needed? What does it do?
      
     ! -----------------------------------------------------------
     ! Access parameter values from material section of sif file (nodal values)
@@ -363,8 +357,8 @@ CONTAINS
       ! Coefficient of hw in flux linearisation
       ! ------------------------------------------
       IF (Newton) THEN
-        qh(i,1:dimsheet) = dHydraulicConductivitydx(i)*dEffectivePressuredx(i)*(gradPhi0(i,1:dimsheet) - &
-          dEffectivePressuredx(i)*dhwdx(i,1:dimsheet)) - HydraulicConductivity(i)*ddEffectivePressuredx(i)*dhwdx(i,1:dimsheet)
+        qh(i,1:dimsheet) = - dHydraulicConductivitydx(i)*dEffectivePressuredx(i)*(gradPhi0(i,1:dimsheet) - &
+          dEffectivePressuredx(i)*dhwdx(i,1:dimsheet)) + HydraulicConductivity(i)*ddEffectivePressuredx(i)*dhwdx(i,1:dimsheet)
       ELSE
         qh(i,1:dimsheet) = 0
       END IF
@@ -373,18 +367,18 @@ CONTAINS
       ! Coefficient of grad(hw) in flux linearisation
       ! ----------------------------------------------
       IF (Newton) THEN
-        QQh(i) = -HydraulicConductivity(i)*dEffectivePressuredx(i)
+        QQh(i) = HydraulicConductivity(i)*dEffectivePressuredx(i)
       ELSE
-        QQh(i) = -HydraulicConductivity(i)*dEffectivePressuredx(i)
+        QQh(i) = HydraulicConductivity(i)*dEffectivePressuredx(i)
       END IF
       WRITE(*,*) 'QQh', QQh(i)
 
       ! Order 1 term in flux linearisation
       ! ------------------------------------
       IF (Newton) THEN
-        q0(i,1:dimsheet) = HydraulicConductivity(i)*gradPhi0(i,1:dimsheet) - qh(i,1:dimsheet)
+        q0(i,1:dimsheet) = - HydraulicConductivity(i)*gradPhi0(i,1:dimsheet) - qh(i,1:dimsheet)
       ELSE
-        q0(i,1:dimsheet) = HydraulicConductivity(i)*gradPhi0(i,1:dimsheet)
+        q0(i,1:dimsheet) = - HydraulicConductivity(i)*gradPhi0(i,1:dimsheet)
       END IF
       WRITE(*,*) 'q0', q0(i,1:dimsheet)
     END DO
@@ -604,14 +598,14 @@ CONTAINS
     REAL(KIND=dp) :: dEffectivePressuredx(n), ddEffectivePressuredx(n), dHydraulicConductivitydx(n)
     REAL(KIND=dp) :: DensityWaterAtIP, LatentHeatAtIP, hwAtIP
     REAL(KIND=dp) :: LoadAtIP, Weight
-    REAL(KIND=dp) :: HydraulicConductivityAtIP, EffectivePressureAtIP, dEffectivePressuredxAtIP
-    REAL(KIND=dp) :: ddEffectivePressuredxAtIP, dHydraulicConductivitydxAtIP
-    REAL(KIND=dp) :: q0(n,dimsheet), qh(n,dimsheet), QQh(n)
-    REAL(KIND=dp) :: QQhAtIp
-    REAL(KIND=dp) :: dqdhAtIP(dimsheet), q0AtIP(dimsheet), dhwdxAtIP(dimsheet), gradPhi0AtIP(dimsheet), graddNdhAtIP(dimsheet)
-    REAL(KIND=dp) :: qhAtIP(dimsheet), gradNAtIP(dimsheet)
-    !REAL(KIND=dp), ALLOCATABLE :: Basis(:), dBasisdx(:,:)
-    REAL(KIND=dp) :: Basis(nd), dBasisdx(nd,dim), DetJ
+    !REAL(KIND=dp) :: HydraulicConductivityAtIP, EffectivePressureAtIP, dEffectivePressuredxAtIP
+    !REAL(KIND=dp) :: ddEffectivePressuredxAtIP, dHydraulicConductivitydxAtIP
+    REAL(KIND=dp), ALLOCATABLE :: q0(:,:), qh(:,:), QQh(:)
+    REAL(KIND=dp) :: QQhAtIp, q0AtIP(dimsheet), qhAtIP(dimsheet)
+    !REAL(KIND=dp) :: dqdhAtIP(dimsheet), q0AtIP(dimsheet), dhwdxAtIP(dimsheet), gradPhi0AtIP(dimsheet), graddNdhAtIP(dimsheet)
+    !REAL(KIND=dp) :: qhAtIP(dimsheet), gradNAtIP(dimsheet)
+    REAL(KIND=dp), ALLOCATABLE :: Basis(:), dBasisdx(:,:)
+    REAL(KIND=dp) :: DetJ !,Basis(nd), dBasisdx(nd,dim)
     REAL(KIND=dp) :: MASS(nd,nd), STIFF(nd,nd), FORCE(nd), LOAD(n)
     LOGICAL :: Stat,Found
     INTEGER :: i,t,p,q,dim, rankA, rankM
@@ -620,14 +614,15 @@ CONTAINS
     TYPE(Nodes_t) :: Nodes
     SAVE Nodes
 !------------------------------------------------------------------------------
-      ! -----------------------------------------------------------------------------------
-    ! Allocate sizes of the allocatables
-    ! (These should have been automatically deallocated when leaving any of the other subroutines in CONTAINS)
-    ! ------------------------------------------------------------------------------------
-    !ALLOCATE(Basis(nd),dBasisdx(nd,dimsheet))
 
     dim = CoordinateSystemDimension()
     dimsheet = Element % TYPE % DIMENSION  ! should be 2 when because the hydrology solver is applied on a 2D boundary
+
+    ! -----------------------------------------------------------------------------------
+    ! Allocate sizes of the allocatables
+    ! (These should have been automatically deallocated when leaving any of the other subroutines in CONTAINS)
+    ! ------------------------------------------------------------------------------------
+    ALLOCATE(Basis(nd), dBasisdx(nd,dim), q0(n,dimsheet), qh(n,dimsheet), QQh(n))
 
     CALL GetElementNodes( Nodes )
     MASS  = 0._dp
@@ -647,7 +642,7 @@ CONTAINS
       
     ! Calculate the linearised components of the water flux (Newton or Picard)
     !---------------------------------------------------------------------------
-    !CALL CalculateWaterFluxComponents(Element, Nodes, n, nd, dimsheet, nodalhw, q0, qh, QQh)
+    CALL CalculateWaterFluxComponents(Element, Nodes, n, nd, dimsheet, nodalhw, q0, qh, QQh)
 
     ! Numerical integration:
     !-----------------------
@@ -668,25 +663,30 @@ CONTAINS
 
       ! Water sheet thickness (from previous iteration, I hope) at integration point
       !--------------------------------------------------
-      hwAtIP = SUM( nodalhw(1:n) * Basis(1:n) )   ! hw
-      dhwdxAtIP = MATMUL( nodalhw(1:n) , dBasisdx(1:n,1:dimsheet))   ! grad(hw)
+      !hwAtIP = SUM( nodalhw(1:n) * Basis(1:n) )   ! hw
+      !dhwdxAtIP = MATMUL( nodalhw(1:n) , dBasisdx(1:n,1:dimsheet))   ! grad(hw)
 
       !Gradient Values at IPs
-      gradPhi0AtIP = MATMUL( Phi0(1:n) , dBasisdx(1:n,1:dimsheet) )  ! where N = Phi0 - Phi
-      gradNAtIP = MATMUL( EffectivePressure(1:n) , dBasisdx(1:n,1:dimsheet) )
-      graddNdhAtIP = MATMUL( dEffectivePressuredx(1:n) , dBasisdx(1:n,1:dimsheet) )
+      !gradPhi0AtIP = MATMUL( Phi0(1:n) , dBasisdx(1:n,1:dimsheet) )  ! where N = Phi0 - Phi
+      !gradNAtIP = MATMUL( EffectivePressure(1:n) , dBasisdx(1:n,1:dimsheet) )
+      !graddNdhAtIP = MATMUL( dEffectivePressuredx(1:n) , dBasisdx(1:n,1:dimsheet) )
 
       !Non Gradient Values at IPs
-      HydraulicConductivityAtIP = SUM( HydraulicConductivity(1:n) * Basis(1:n) )
-      EffectivePressureAtIP = SUM( EffectivePressure(1:n) * Basis(1:n) )
-      dEffectivePressuredxAtIP = SUM( dEffectivePressuredx(1:n) * Basis(1:n) )
-      dHydraulicConductivitydxAtIP = SUM( dHydraulicConductivitydx(1:n) * Basis(1:n) )
+      !HydraulicConductivityAtIP = SUM( HydraulicConductivity(1:n) * Basis(1:n) )
+      !EffectivePressureAtIP = SUM( EffectivePressure(1:n) * Basis(1:n) )
+      !dEffectivePressuredxAtIP = SUM( dEffectivePressuredx(1:n) * Basis(1:n) )
+      !dHydraulicConductivitydxAtIP = SUM( dHydraulicConductivitydx(1:n) * Basis(1:n) )
 
-      dqdhAtIP = -dHydraulicConductivitydxAtIP*dEffectivePressuredxAtIP*(gradPhi0AtIP - gradNAtIP) + & 
-      HydraulicConductivityAtIP*graddNdhAtIP
+      !dqdhAtIP = -dHydraulicConductivitydxAtIP*dEffectivePressuredxAtIP*(gradPhi0AtIP - gradNAtIP) + & 
+      !HydraulicConductivityAtIP*graddNdhAtIP
 
-      qhAtIP = - HydraulicConductivityAtIP*(gradPhi0AtIP - gradNAtIP)
-      q0AtIP = -HydraulicConductivityAtIP*gradPhi0AtIP
+      !qhAtIP = - HydraulicConductivityAtIP*(gradPhi0AtIP - gradNAtIP)
+      !q0AtIP = -HydraulicConductivityAtIP*gradPhi0AtIP
+
+      ! Linearised components of water flux evaluated at intergration point
+      q0AtIP = MATMUL( Basis(1:n) , q0(1:n,1:dimsheet) )
+      qhAtIP = MATMUL( Basis(1:n) , qh(1:n,1:dimsheet) )
+      QQhAtIP = SUM( QQh(1:n) * Basis(1:n) )
 
       Weight = IP % s(t) * DetJ
       
@@ -697,26 +697,31 @@ CONTAINS
         FORCE(q) = FORCE(q) + Weight * LoadAtIP * Basis(q)
 
         !RHS FLUX TERM
-        IF (Newton) THEN
-          FORCE(q) = FORCE(q) + Weight * SUM( dBasisdx(q,1:dimsheet) *(qhAtIP(1:dimsheet)-hwAtIP*dqdhAtIP(1:dimsheet)) )
-        ELSE
-          FORCE(q) = FORCE(q) + Weight * SUM( dBasisdx(q,1:dimsheet) *q0AtIP(1:dimsheet) )
-        END IF
+        FORCE(q) = FORCE(q) + Weight * SUM( dBasisdx(q,1:dimsheet) *q0AtIP(1:dimsheet) )
+        !IF (Newton) THEN
+        !  FORCE(q) = FORCE(q) + Weight * SUM( dBasisdx(q,1:dimsheet) *(qhAtIP(1:dimsheet)-hwAtIP*dqdhAtIP(1:dimsheet)) )
+        !ELSE
+        !  FORCE(q) = FORCE(q) + Weight * SUM( dBasisdx(q,1:dimsheet) *q0AtIP(1:dimsheet) )
+        !END IF
 
         DO p=1,nd
 
-          IF (Newton) THEN
-            STIFF (p,q) = STIFF(p,q) - Weight * &
-            SUM(dqdhAtIP(1:dimsheet)*dBasisdx(q,1:dimsheet)) * Basis(p)
-          ELSE
-            STIFF(p,q) = STIFF(p,q) - Weight * &
-              (HydraulicConductivityAtIP)*dEffectivePressuredxAtIP * &
-          SUM(dBasisdx(q,1:dimsheet) * dBasisdx(p,1:dimsheet))
+          STIFF(p,q) = STIFF(p,q) - Weight * SUM( &
+            ( Basis(p) * qhAtIP(1:dimsheet) + QQhAtIP * dBasisdx(p,1:dimsheet) ) &
+            * dBasisdx(q,1:dimsheet) )
 
-          !  STIFF(p,q) = STIFF(p,q) + Weight * &
-          !    (HydraulicConductivityAtIP) * 100 * &
-          !SUM(dBasisdx(q,1:dimsheet) * dBasisdx(p,1:dimsheet))  
-          END IF
+          !IF (Newton) THEN
+          !  STIFF (p,q) = STIFF(p,q) - Weight * &
+          !  SUM(dqdhAtIP(1:dimsheet)*dBasisdx(q,1:dimsheet)) * Basis(p)
+          !ELSE
+          !  STIFF(p,q) = STIFF(p,q) - Weight * &
+          !    (HydraulicConductivityAtIP)*dEffectivePressuredxAtIP * &
+          !SUM(dBasisdx(q,1:dimsheet) * dBasisdx(p,1:dimsheet))
+
+          !!  STIFF(p,q) = STIFF(p,q) + Weight * &
+          !!    (HydraulicConductivityAtIP) * 100 * &
+          !!SUM(dBasisdx(q,1:dimsheet) * dBasisdx(p,1:dimsheet))  
+          !END IF
 
           MASS(p,q) = MASS(p,q) + Weight * Basis(q) * Basis(p)
         END DO
@@ -728,14 +733,23 @@ CONTAINS
     END DO    
     
     !___FOR ALL TEMPERATE ELEMENTS CHECK IF ANY OF THE NODES ARE COLD____
+    ! This is a fix included to account for the fact that, for partition reasons,
+    ! elements with at least one temperate node are treated as active, whereas
+    ! really only elements with ALL nodes temperate should be treated as active.
     num_cold = 0._dp
-    IF (.NOT. CheckPassiveElement(Element) ) THEN
-      DO i=1, n   ! ... for each node within the element (LOCAL nodal index)
+    IF (.NOT. CheckPassiveElement(Element) ) THEN  ! (line probably not needed as LocalMatrix is only called for active elements)
+      DO i=1, n   ! For each node within the element (LOCAL nodal index)...
         j = Element % NodeIndexes(i) 
-        IF (ctvals(ctperm(j)) .LE. 0) THEN
-          num_cold = num_cold + 1
+        IF (ctvals(ctperm(j)) .LE. 0) THEN    ! ...if node is cold...
+          num_cold = num_cold + 1    ! ... +1 to cold node count for the element.
         END IF
       END DO
+      ! If the element contains any cold nodes, we do not want it to contribute to
+      ! the local matrix. Therefore, the mass and stiffness matrices and forces vector
+      ! from that element are set to zero. HOWEVER, we also need to ensure that the water
+      ! sheet thickness of the cold nodes does not evolve (as would be the case if the 
+      ! cold node was included in a passive element), so the corresponding diagonal entry
+      ! of the mass matrix is set to 1, giving dhw/dt=0.
       IF (num_cold > 0._dp) THEN
           !WRITE(*,*) "cold ACTIVE"
           STIFF = STIFF*0._dp
