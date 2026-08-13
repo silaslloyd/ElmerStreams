@@ -62,13 +62,13 @@ SUBROUTINE SheetSolverhw( Model,Solver,dt,TransientSimulation )
   INTEGER, ALLOCATABLE :: hwOldPerm(:), coordinationnumber(:), numberofpassiveneighbours(:)  ! copy of values to retain when pointer is overwritten by new iteration values
   TYPE(Nodes_t) :: ElementNodes
   INTEGER :: dim, qwNDOFs, k, rankA, rankM, dimsheet
-  REAL(KIND=dp), ALLOCATABLE :: nodalhw(:), nodalhwOld(:) !, q0(:,:), qh(:,:), QQh(:)
+  REAL(KIND=dp), ALLOCATABLE :: nodalhw(:), nodalhwOld(:)
   REAL(KIND=dp), ALLOCATABLE :: MASS(:,:), STIFF(:,:), LOAD(:), FORCE(:)
 
   CHARACTER(LEN=MAX_NAME_LEN) :: SolverName
 
   SAVE hwOld, hwOldPerm, MASS, STIFF, LOAD, FORCE, coordinationnumber, numberofpassiveneighbours, &
-   nodalhw, nodalhwOld !, q0, qh, QQh
+   nodalhw, nodalhwOld
 
 !PointerToSolver => Solver    ! https://fortran-lang.discourse.group/t/understanding-fortran-pointers/1142
 
@@ -91,8 +91,6 @@ SUBROUTINE SheetSolverhw( Model,Solver,dt,TransientSimulation )
 
     ALLOCATE( hwOld(m), hwOldPerm(m), MASS(n,n), STIFF(n,n), LOAD(n), FORCE(n), &
          coordinationnumber(m), numberofpassiveneighbours(m), STAT=istat )
-         ! nodalhw(m), nodalhwOld(m), &
-         !q0(m,dim), qh(m,dim), QQh(m), 
 
     IF ( istat /= 0 ) THEN
       CALL FATAL( 'SheetSolver', 'Memory allocation error' )
@@ -152,7 +150,6 @@ SUBROUTINE SheetSolverhw( Model,Solver,dt,TransientSimulation )
     !Newton =  GetNewtonActive()  ! logical that is 1 if Newton iterations are to be used (Picard otherwise)
     Newton = .False.
 
-    !WRITE(*,*) Newton
     ! System assembly:
     !----------------
     CALL DefaultInitialize()
@@ -160,7 +157,6 @@ SUBROUTINE SheetSolverhw( Model,Solver,dt,TransientSimulation )
     ! Build matrix arising from the bulk elements
     ! ------------------
     Active = GetNOFActive()   ! number of active elements (i.e. not passive)
-    !WRITE(*,*) Active, " active elements"
 
     ! Per-node counter initialization
     coordinationnumber = 0           ! number of elements the node is part of
@@ -168,8 +164,6 @@ SUBROUTINE SheetSolverhw( Model,Solver,dt,TransientSimulation )
     
     DO t=1,Active   ! for each active element..
       Element => GetActiveElement(t)   ! information about that element
-      !WRITE(*,*) "___________________"
-      !WRITE(*,*) "ELEMENT", t
       num_cold = 0._dp   ! counter for number of cold nodes in the element
       IF (ParEnv % myPe .NE. Element % partIndex) CYCLE
       n  = Element % TYPE % NumberOfNodes !GetElementNOFNodes()        ! number of nodes
@@ -194,8 +188,6 @@ SUBROUTINE SheetSolverhw( Model,Solver,dt,TransientSimulation )
         numberofpassiveneighbours(Element % NodeIndexes(1:n)) = numberofpassiveneighbours(Element % NodeIndexes(1:n)) + 1
       END IF
 
-     !WRITE(*,*) "___________________"
-
       CALL LocalMatrix(  Element, n, nd+nb, dim, dimsheet, hw(hwPerm(Element % NodeIndexes(1:n))), ctperm, ctvals)
       
     
@@ -204,7 +196,6 @@ SUBROUTINE SheetSolverhw( Model,Solver,dt,TransientSimulation )
     BulkUpdate = .TRUE.   ! mass and stiffness matrices are saved if true
     RHSUpdate = .TRUE.    ! force vector is saved if true
     CALL DefaultFinishBulkAssembly(Solver,BulkUpdate,RHSUpdate)
-    
     
     CALL DefaultFinishBoundaryAssembly()
     CALL DefaultFinishAssembly()
@@ -247,19 +238,8 @@ DO t=1, Solver % NumberOfActiveElements   ! for each active element...
   nodalhw = hw(hwPerm(Element % NodeIndexes(1:n)))
   nodalhwOld = hwOld(hwOldPerm(Element % NodeIndexes(1:n)))
 
-  !WRITE(*,*) '------------------------', '------------------------'
-  !WRITE(*,*) 'START CalculateWaterFlux, element # =', t
-  !WRITE(*,*) 'out of N active elements = ', Solver % NumberOfActiveElements
-
-  !CALL CalculateWaterFlux(Element, ElementNodes, n, nd, dimsheet, hw(hwPerm(Element % NodeIndexes(1:n))), &
-  !  hwOld(hwOldPerm(Element % NodeIndexes(1:n))), qw, qwPerm)
-
   CALL CalculateWaterFlux(Element, ElementNodes, n, nd, dimsheet, qwNDOFs, nodalhw, &
     nodalhwOld, qw, qwPerm)
-
-  !WRITE(*,*) 'END CalculateWaterFlux, element # =', t
-  !WRITE(*,*) 'out of N active elements = ', Solver % NumberOfActiveElements
-  !WRITE(*,*) '------------------------', '------------------------'
 
 END DO 
 
@@ -333,18 +313,6 @@ CONTAINS
       !-------------------------------------------------------
       dhwdx(i,1:dimsheet) = nodalhw(i) * dBasisdx(i,1:dimsheet)   ! grad(hw)
       gradPhi0(i,1:dimsheet) = Phi0(i) * dBasisdx(i,1:dimsheet)  ! where N = Phi0 - Phi
-      !WRITE(*,*) 'i =', i
-      !WRITE(*,*) 'out of n =', n
-      !WRITE(*,*) 'dhwdx', dhwdx(i,1:dimsheet)
-      !WRITE(*,*) 'gradPhi0', gradPhi0(i,1:dimsheet)
-      !WRITE(*,*) 'Phi0', Phi0(i)
-      !WRITE(*,*) 'dHydraulicConductivitydx', dHydraulicConductivitydx(i)
-      !WRITE(*,*) 'HydraulicConductivity', HydraulicConductivity(i)
-      !WRITE(*,*) 'dEffectivePressuredx', dEffectivePressuredx(i)
-      !WRITE(*,*) 'EffectivePressure', EffectivePressure(i)
-      !WRITE(*,*) 'ddEffectivePressuredx', ddEffectivePressuredx(i)
-      !WRITE(*,*) 'hw', nodalhw(i)
-      !WRITE(*,*) 'dBasisdx', dBasisdx(i,1:dim)
 
       ! Coefficient of hw in flux linearisation
       ! ------------------------------------------
@@ -587,14 +555,10 @@ CONTAINS
     REAL(KIND=dp) :: dEffectivePressuredx(n), ddEffectivePressuredx(n), dHydraulicConductivitydx(n)
     REAL(KIND=dp) :: DensityWaterAtIP, LatentHeatAtIP, hwAtIP
     REAL(KIND=dp) :: LoadAtIP, Weight
-    !REAL(KIND=dp) :: HydraulicConductivityAtIP, EffectivePressureAtIP, dEffectivePressuredxAtIP
-    !REAL(KIND=dp) :: ddEffectivePressuredxAtIP, dHydraulicConductivitydxAtIP
     REAL(KIND=dp), ALLOCATABLE :: q0(:,:), qh(:,:), QQh(:)
     REAL(KIND=dp) :: QQhAtIp, q0AtIP(dimsheet), qhAtIP(dimsheet)
-    !REAL(KIND=dp) :: dqdhAtIP(dimsheet), q0AtIP(dimsheet), dhwdxAtIP(dimsheet), gradPhi0AtIP(dimsheet), graddNdhAtIP(dimsheet)
-    !REAL(KIND=dp) :: qhAtIP(dimsheet), gradNAtIP(dimsheet)
     REAL(KIND=dp), ALLOCATABLE :: Basis(:), dBasisdx(:,:)
-    REAL(KIND=dp) :: DetJ !,Basis(nd), dBasisdx(nd,dim)
+    REAL(KIND=dp) :: DetJ
     REAL(KIND=dp) :: MASS(nd,nd), STIFF(nd,nd), FORCE(nd), LOAD(n)
     LOGICAL :: Stat,Found
     INTEGER :: i,t,p,q,dim, rankA, rankM
@@ -628,7 +592,6 @@ CONTAINS
     CALL GetParameters(Element, Material, n, DensityWater, LatentHeat, Phi0, EffectivePressure, HydraulicConductivity, &
       dEffectivePressuredx, ddEffectivePressuredx, dHydraulicConductivitydx)
 
-      
     ! Calculate the linearised components of the water flux (nodal values, Newton or Picard)
     !---------------------------------------------------------------------------
     CALL CalculateWaterFluxComponents(Element, Nodes, n, nd, dimsheet, nodalhw, q0, qh, QQh)
@@ -650,35 +613,13 @@ CONTAINS
       !------------------------------------------
       LoadAtIP = SUM( Basis(1:n) * LOAD(1:n) )
 
-      ! Water sheet thickness (from previous iteration, I hope) at integration point
-      !--------------------------------------------------
-      !hwAtIP = SUM( nodalhw(1:n) * Basis(1:n) )   ! hw
-      !dhwdxAtIP = MATMUL( nodalhw(1:n) , dBasisdx(1:n,1:dimsheet))   ! grad(hw)
-
-      !Gradient Values at IPs
-      !gradPhi0AtIP = MATMUL( Phi0(1:n) , dBasisdx(1:n,1:dimsheet) )  ! where N = Phi0 - Phi
-      !gradNAtIP = MATMUL( EffectivePressure(1:n) , dBasisdx(1:n,1:dimsheet) )
-      !graddNdhAtIP = MATMUL( dEffectivePressuredx(1:n) , dBasisdx(1:n,1:dimsheet) )
-
-      !Non Gradient Values at IPs
-      !HydraulicConductivityAtIP = SUM( HydraulicConductivity(1:n) * Basis(1:n) )
-      !EffectivePressureAtIP = SUM( EffectivePressure(1:n) * Basis(1:n) )
-      !dEffectivePressuredxAtIP = SUM( dEffectivePressuredx(1:n) * Basis(1:n) )
-      !dHydraulicConductivitydxAtIP = SUM( dHydraulicConductivitydx(1:n) * Basis(1:n) )
-
-      !dqdhAtIP = -dHydraulicConductivitydxAtIP*dEffectivePressuredxAtIP*(gradPhi0AtIP - gradNAtIP) + & 
-      !HydraulicConductivityAtIP*graddNdhAtIP
-
-      !qhAtIP = - HydraulicConductivityAtIP*(gradPhi0AtIP - gradNAtIP)
-      !q0AtIP = -HydraulicConductivityAtIP*gradPhi0AtIP
-
       ! Linearised components of water flux evaluated at intergration point
+      !---------------------------------------------------------------------
       q0AtIP = MATMUL( Basis(1:n) , q0(1:n,1:dimsheet) )
       qhAtIP = MATMUL( Basis(1:n) , qh(1:n,1:dimsheet) )
       QQhAtIP = SUM( QQh(1:n) * Basis(1:n) )
 
-      Weight = IP % s(t) * DetJ
-      
+      Weight = IP % s(t) * DetJ 
   
       DO q=1,nd
         ! Melt source
@@ -687,11 +628,6 @@ CONTAINS
 
         !RHS FLUX TERM
         FORCE(q) = FORCE(q) + Weight * SUM( dBasisdx(q,1:dimsheet) *q0AtIP(1:dimsheet) )
-        !IF (Newton) THEN
-        !  FORCE(q) = FORCE(q) + Weight * SUM( dBasisdx(q,1:dimsheet) *(qhAtIP(1:dimsheet)-hwAtIP*dqdhAtIP(1:dimsheet)) )
-        !ELSE
-        !  FORCE(q) = FORCE(q) + Weight * SUM( dBasisdx(q,1:dimsheet) *q0AtIP(1:dimsheet) )
-        !END IF
 
         DO p=1,nd
 
@@ -699,26 +635,9 @@ CONTAINS
             ( Basis(p) * qhAtIP(1:dimsheet) + QQhAtIP * dBasisdx(p,1:dimsheet) ) &
             * dBasisdx(q,1:dimsheet) )
 
-          !IF (Newton) THEN
-          !  STIFF (p,q) = STIFF(p,q) - Weight * &
-          !  SUM(dqdhAtIP(1:dimsheet)*dBasisdx(q,1:dimsheet)) * Basis(p)
-          !ELSE
-          !  STIFF(p,q) = STIFF(p,q) - Weight * &
-          !    (HydraulicConductivityAtIP)*dEffectivePressuredxAtIP * &
-          !SUM(dBasisdx(q,1:dimsheet) * dBasisdx(p,1:dimsheet))
-
-          !!  STIFF(p,q) = STIFF(p,q) + Weight * &
-          !!    (HydraulicConductivityAtIP) * 100 * &
-          !!SUM(dBasisdx(q,1:dimsheet) * dBasisdx(p,1:dimsheet))  
-          !END IF
-
           MASS(p,q) = MASS(p,q) + Weight * Basis(q) * Basis(p)
         END DO
       END DO
-      ! Check ranks of siffness and mass matrices are full
-      rankA = RANK(STIFF)
-      rankM = RANK(MASS)
-      !CALL Info('SheetSolverhw','Rank of M: '//I2S(rankM)//', rank of A: '//I2S(rankA)//', nd: '//I2S(nd)//', n: '//I2S(n),Level=1)
     END DO    
     
     !___FOR ALL TEMPERATE ELEMENTS CHECK IF ANY OF THE NODES ARE COLD____
@@ -753,23 +672,7 @@ CONTAINS
       END IF
     END IF
     
-    !IF (num_cold > 0._dp) THEN
-    !      !WRITE(*,*) "cold ACTIVE"
-    !      WRITE(*,*) "MASS MATRIX"
-    !      WRITE(*,*) MASS(1:n,1)
-    !      WRITE(*,*) MASS(1:n,2)
-    !      WRITE(*,*) MASS(1:n,3)
-    !      WRITE(*,*) MASS(1:n,4)
-    !      WRITE(*,*) "____"
-          !WRITE(*,*) MASS
-          !WRITE(*,*) FORCE
-    !END IF
-    
     IF(TransientSimulation) CALL Default1stOrderTime(MASS,STIFF,FORCE)
-   
-
-
-    !WRITE(*,*) "_______________________"
 
     CALL CondensateP( nd-nb, nb, STIFF, FORCE )
     CALL DefaultUpdateEquations(STIFF,FORCE)
