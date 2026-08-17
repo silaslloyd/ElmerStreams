@@ -1,0 +1,13 @@
+Linear System Solver = "Iterative"
+Linear System Iterative Method = "BiCGStab"
+Linear System Max Iterations = 5000
+Linear System Convergence Tolerance = 1.0E-08
+Linear System Abort Not Converged = True
+Linear System Preconditioning = "ILU1"
+Linear System Residual Output = 1
+Linear System Use Hypre = Logical True
+!Linear System Preconditioning = "ParaSails"
+!ParaSails Threshold = Real -0.95
+!ParaSails Filter = Real -0.95
+!ParaSails Maxlevel = Integer 1
+!ParaSails Symmetry = Integer 0
