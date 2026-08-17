@@ -539,7 +539,7 @@ End
 Solver 3
   Exec Solver = "Before All"
   Equation = GroundedMaskini
-  Procedure = "SRC/GroundedSolver.so" "GroundedSolver"
+  Procedure = "../SRC/GroundedSolver.so" "GroundedSolver"
   Variable = GroundedMask
   Variable DOFs = 1
   Toler = Real 1.0e-3
@@ -625,7 +625,7 @@ End
 Solver 9
   Exec Solver = "before timestep"
   Equation = ColdTempMask
-  Procedure = "SRC/ColdTempSolver.so" "ColdTempMaskSolver"
+  Procedure = "../SRC/ColdTempSolver.so" "ColdTempMaskSolver"
   Variable = "ColdTempMask"
   Variable DOFs = 1
   Exported Variable 1 = -dofs 1 "C_noise"
@@ -665,7 +665,7 @@ Solver 10
  ! Viscosity Newton Relaxation Factor = $2.0/3.0 
   !Nonlinear System Reset Newton = Logical True
 
-  include  SRC/linsys/gcr.sif
+  include  ../SRC/linsys/gcr.sif
   ! mumps or gcr? Sophie used mumps, MLB used gcr.
 
   ! Convergence on timelevel (not required here)
@@ -794,7 +794,7 @@ Solver 13
   !Exec Solver = "Never"
   ! Element = "p:1 -tri b:1 -quad b:3 -wedge b:1 -brick b:4"
   Exec Solver = "after Timestep"
-  Procedure =  "SRC/FreeSurfaceSolver.so" "FreeSurfaceSolver"
+  Procedure =  "../SRC/FreeSurfaceSolver.so" "FreeSurfaceSolver"
   Variable = "Zb"
   Variable DOFS =  1
   !Steady State Convergence Tolerance = 1.0E-03
@@ -831,7 +831,7 @@ Solver 14
     !Element = "p:2 -tri b:1 -quad b:3 -wedge b:1 -brick b:4"
 
   Exec Solver = "after Timestep"
-  Procedure =  "SRC/FreeSurfaceSolver2.so" "FreeSurfaceSolver"
+  Procedure =  "../SRC/FreeSurfaceSolver2.so" "FreeSurfaceSolver"
   Variable = "Zs"
   Variable DOFs =  1
   Exported Variable 1 = "Zs Residual"
@@ -894,7 +894,7 @@ End
 Solver 16
   Exec Solver = "never"
   Equation = "GroundedMask2"
-  Procedure = "SRC/GroundedSolver.so" "GroundedSolver"
+  Procedure = "../SRC/GroundedSolver.so" "GroundedSolver"
   Variable = "GroundedMask"
   Variable DOFs = 1
 
@@ -913,7 +913,7 @@ Solver 17
   !Procedure =File "AdvectionDiffusion" "AdvectionDiffusionSolver"
   Equation = String "Sheet solver water sheet thickness"
   Variable = String "Water Sheet Thickness"   ! Variable directly outputted by solver ?
-  Procedure = "SRC/SheetSolverhw" "SheetSolverhw"
+  Procedure = "../SRC/SheetSolverhw" "SheetSolverhw"
 
   !Linear System Solver = "Direct"
   !Linear System Direct Method = $directsolver
@@ -955,7 +955,7 @@ Solver 18
   Exec Solver = "after timestep"
  ! Exec Solver = "never"
   Equation = "GroundedMask_end"
-  Procedure = "SRC/GroundedSolver.so" "GroundedSolver"
+  Procedure = "../SRC/GroundedSolver.so" "GroundedSolver"
   Variable = "GroundedMask"
   Variable DOFs = 1
 
@@ -1135,7 +1135,7 @@ Boundary Condition 14
   !Velocity 3 = 0.0
   Flow Force BC = Logical True
   External Pressure = Variable Coordinate 3
-      Real Procedure "SRC/Buoyancy.so" "SeaPressure"
+      Real Procedure "../SRC/Buoyancy.so" "SeaPressure"
   Compute Sea Pressure = Logical True
 
   Partial Vertical MeshUpdate 1 = Real 0.0
@@ -1242,19 +1242,19 @@ Boundary Condition  19
   Flow Solution Name = String "Flow Solution" 
 
   Slip Coefficient 1 = Variable "time"
-    Real Procedure "SRC/Buoyancy.so" "SeaSpring"   ! Buoyancy.f90 (and .so) have been modified to use body 3 (ice) instead of default body 1
+    Real Procedure "../SRC/Buoyancy.so" "SeaSpring"   ! Buoyancy.f90 (and .so) have been modified to use body 3 (ice) instead of default body 1
   Compute Sea Spring = Logical True
  ! Slip Coefficient 1 = Real 1e-16
 
 
   Slip Coefficient 2 = Variable Coordinate 1
-    Real Procedure "SRC/contact.so" "SlidCoef_Contact"
+    Real Procedure "../SRC/contact.so" "SlidCoef_Contact"
   
   Slip Coefficient 3 = Variable Coordinate 1
-    Real Procedure "SRC/contact.so" "SlidCoef_Contact"
+    Real Procedure "../SRC/contact.so" "SlidCoef_Contact"
   
   External Pressure = Variable Coordinate 3
-    Real Procedure "SRC/Buoyancy.so" "SeaPressure"
+    Real Procedure "../SRC/Buoyancy.so" "SeaPressure"
   
 
   Compute Sea Pressure = Logical True

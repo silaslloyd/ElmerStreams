@@ -10,18 +10,17 @@
 ! FINLAND TRIP Dec 2025
 ! Modified Jan 2026 to use more physical parameter values.
 ! 3 layer geometry: ice, 'filler', bedrock.
-! Built from geometryStokes_slide_transient.sif (I think).
+! Built from geometry_Stokes_slide_transient.sif (I think).
 
 !check keywords warn
 !echo on master
-$namerun = "InitialVel"
+$namerun = "InitialT"
 !$restart = ""
-!$element="p:1 -tri b:1 -quad b:3"
+$element="p:1 -tri b:1 -quad b:3"
 $directsolver="MUMPS"
 !$directsolver="UMFPACK"
 $fssaflag="full"
 $adapTol = 1.0e-2
-
 
 
 !---LUA BEGIN
@@ -34,8 +33,9 @@ $adapTol = 1.0e-2
 
 Header
   Mesh DB "footprint" ""
-  Results Directory "VTUs/InitialVelocity"
+  Results Directory "VTUs/InitialT"
 End
+
 
 !---------------------------------------------------
 !---------------- CONSTANTS ------------------------
@@ -66,14 +66,24 @@ End
 
 Simulation
   Coordinate System  = "Cartesian 3D" 
-  Simulation Type = "Steady State"
-
-  !Timestep Intervals(2) = 5 5
-  !Output Intervals(2) = 1 1
-  !Timestep Sizes(2) = 1e-8 1e-4
+  Simulation Type = "transient"
  
-  Steady State Max Iterations = 10
+  Steady State Max Iterations = 1
   Steady State Min Iterations = 1
+
+  Timestepping Method = "bdf"
+  BDF Order = 1
+
+  !! Small initial timesteps for initial adjustment
+  !
+  Timestep Intervals(4) = 5 5 5 100
+  Output Intervals(4) = 5 5 5 10
+  Timestep Sizes(4) = Real 1e3 1e4 1e5 1e6
+
+
+  !Timestep Intervals = 1
+  !Output Intervals = 1
+  !Timestep Sizes = 1
 
   
   Extruded Mesh Levels = Integer 51
@@ -82,11 +92,11 @@ Simulation
   ! Extruded Mesh Ratio = 100
 
   ! Values for mesh density copied from MLB example
- Extruded Mesh Density = Variable Coordinate 3
+  Extruded Mesh Density = Variable Coordinate 3
      Real
      0.0 1
      0.5 0.003
-    0.51 0.1
+     0.51 0.1
      1.0  0.5
    End
   Extruded BC Layers(2) = Integer 28 29
@@ -94,12 +104,32 @@ Simulation
 
   Post File = "$namerun$.vtu"
   Output File = "$namerun$.result"
-  
+
+  Output Variable 1 = "Strain Heating"
+  Output Variable 2 = "Velocity 1"
+  Output Variable 3 = "Velocity 2"
+  Output Variable 4 = "Velocity 3"
+  Output Variable 5 = "Flow Solution Loads 1"
+  Output Variable 6 = "Flow Solution Loads 2"
+  Output Variable 7 = "Flow Solution Loads 3"
+  Output Variable 8 = "Temperature"
+  Output Variable 9 = "Zs"
+  Output Variable 10 = "Zb"
+  Output Variable 11 = "Pressure"
+  Output Variable 12 = "Bedrock"
+  Output Variable 13 = "GroundedMask"
+  Output Variable 14 = "partition"
+
   ! usually, Dirichlet BC's are initialized before everything else. Sometimes those 
   ! conditions are dependent on solutions of earlier solvers; next line ensures that
   ! this is not an issue.
   !-----------------------------------------
   Initialize Dirichlet Conditions = Logical False
+
+  Restart File = "InitialVel.result"
+  Restart Position = 0
+  Restart Before Initial Condition = Logical True
+  Restart Time Ignore = Logical True
 
 ! This is to do scaling for paraview before saving
 !  vtu: Coordinate Scaling(3) = Real 1.0 20.0 20.0
@@ -110,25 +140,6 @@ Simulation
   
 ! increasing will give more detailed output when running
   max output level = 3
-
-  !Restart File = "InitialGeo.result"
-  !Restart Position = 150
-  !Restart Before Initial Condition = Logical False
-
-  Output Variable 1 = "Temperature"
-  Output Variable 2 = "Temperature Loads"
-  Output Variable 3 = "Velocity 1"
-  Output Variable 4 = "Velocity 2"
-  Output Variable 5 = "Velocity 3"
-  Output Variable 6 = "Strain Heating"
-  Output Variable 7 = "Flow Solution Loads 1"
-  Output Variable 8 = "Flow Solution Loads 2"
-  Output Variable 9 = "Flow Solution Loads 3"
-  Output Variable 10 = "Pressure"
-  Output Variable 11 = "Zb"
-  Output Variable 12 = "Zs"
-  Output Variable 13 = "ZsPlanar"
-  Output Variable 14 = "ZbPlanar" 
 End
 
 !---------------------------------------------------
@@ -186,16 +197,17 @@ End
 !---------------------------------------------------
 !---------------- EQUATIONS ------------------------
 !---------------------------------------------------
+!---------------------------------------------------
 Equation 1
   Name = "bedrock equation"
-  Active Solvers(2) = 1 2  
+  Active Solvers(3) = 1 2 10 
   Convection = "none"
   !Convection = "Computed"
 End
 
 Equation 2
   Name = "filler equation"
-  Active Solvers(2) = 1 2
+  Active Solvers(3) = 1 2 10
   Convection = "none"
  !Convection = "Computed"
 
@@ -203,30 +215,28 @@ End
 
 Equation 3
   Name = "ice equations"
-  Active Solvers (8) = 1 2 3 7 8 9 10 11 
-  Convection = "Computed"
-
+  Active Solvers (7) = 1 2 3 6 8 9 10
+  Convection = "None"
+  !Convection = "Computed"
   Flow Solution Name = String "Flow Solution" 
 End
 
 Equation 4
   Name = "interface equations"
-  Active Solvers(4) = 4 5 12 13
-  Convection = "Computed"                                       
+  Active Solvers(3) = 4 7 11
+  !Convection = "Computed"                                       
   Flow Solution Name = String "Flow Solution"  
 End
-
 Equation 5
   Name = "freesurface equations"
-  Active Solvers(2) = 6 14
-  Convection = "Computed"
+  Active Solvers(1) = 5
+  !Convection = "Computed"
   Flow Solution Name = String "Flow Solution" 
 End
 
 !---------------------------------------------------
 !---------------- INITIAL CONDITIONS ---------------
 !---------------------------------------------------
-! For bedrock
 Initial Condition 1
   Bedrock = Variable Coordinate 1
     Real
@@ -241,7 +251,7 @@ End
 
 ! For filler layer
 Initial Condition 2
-   Bedrock = Variable Coordinate 1
+  Bedrock = Variable Coordinate 1
     Real
       include "Initialisation/Dimensional_ICs/bed_dim.xy"
     End
@@ -258,17 +268,6 @@ Initial Condition 3
       include "Initialisation/Dimensional_ICs/bed_dim.xy"
     End
 
-  !Velocity 1 = 0.0
-  Velocity 2 = 0.0
-  Velocity 3 = 0.0
- ! Pressure = 0.0
-
-  ! Sophie has instead
-  Velocity 1 = Variable Coordinate 1
-    Real Lua "250*(tx[0])/1e6"
-  Pressure =  Variable Coordinate 3
-     Real Lua "rhoi*gravity*(1 - tx[0])*200."
-  ! (with Velovity 2,3 the same)
 
     Temperature = Variable Coordinate 1
     Real 
@@ -278,24 +277,21 @@ End
 
 ! For interface (ice lower surface)
 Initial Condition 4
+! import initial shape of bottom ice from file
    ! Zb = Variable Coordinate 1
-   ! Real Cubic
+   ! Real 
    !   include "Initialisation/Dimensional_ICs/zb_dim.xy"
    ! End
-   Zb = Variable Coordinate 1
-    Real
-      include "Initialisation/Dimensional_ICs/bed_dim.xy"
-    End
-   refZb = Variable Coordinate 1
-    Real Cubic
-      include "Initialisation/Dimensional_ICs/zb_dim.xy"
-    End
+   !  refZb = Variable Coordinate 1
+   ! Real 
+   !   include "Initialisation/Dimensional_ICs/zb_dim.xy"
+   ! End
    Bedrock = Variable Coordinate 1
     Real
       include "Initialisation/Dimensional_ICs/bed_dim.xy"
     End
   ! import initial groundedmask from file
-   groundedmask = Real 1.0
+   !groundedmask =  Variable "Coordinate 1"
     !  Real
     !  include "Initialisation/Dimensional_ICs/gm_dim.xy"
     ! End
@@ -303,10 +299,11 @@ End
 
 ! For ice top surface
 Initial Condition 5
-    Zs = Variable Coordinate 1
-    Real Cubic
-      include "Initialisation/Dimensional_ICs/H_dim.xy"
-    End
+! import initial shape of surface from file
+ ! Zs = Variable Coordinate 1
+ !   Real 
+  !    include "Initialisation/Dimensional_ICs/zs_dim.xy"
+  !  End
 End
 
 
@@ -342,7 +339,7 @@ Body Force 3 !1
   Flow BodyForce 3 = Real #-gravity
 
   ! Deformational heating (from deformational heat solver)
-  !Volumetric Heat Source = Equals Strain Heating
+  Volumetric Heat Source = Equals Strain Heating
 
     !! Might not be enforced
   Temperature Upper Limit = Real 273.15 ! we ignore pressure melting point
@@ -359,7 +356,7 @@ End
 
 Body Force 5
   Name = "bodyforce freesurface"
-  Zs Accumulation Flux 3 = Real #aDIM
+  Zs Accumulation = Real #aDIM
   Temperature Upper Limit = Real 273.15
 End
 
@@ -431,11 +428,11 @@ Material 3
   Mesh Elastic Modulus = Real 100.0
   Mesh Poisson Ratio = Real 0.0
   
- ! Min Zb = Equals "bedrock"
- ! Max Zb = Real 0.0
-  Min Zs = Variable bedrock
-     Real lua "tx[0] + 10"
- ! Max Zs = Real 10000
+  !!Constraints to ensure shelf stability (probably not nescesarry)
+  Min Zb = Equals "bedrock"
+  Max Zb = Real 0.0
+  Min Zs = Real 0.0
+  Max Zs = Real 10000
   
   Temperature Upper Limit = Real 273.15
 
@@ -457,7 +454,7 @@ Solver 1
   Equation = "MapCoordinateInit"
   Procedure = "StructuredMeshMapper" "StructuredMeshMapper"
   Minimum Height = Real 1.0
-  Exec Solver = "Before All"
+  Exec Solver = "Before Timestep"
   Active Coordinate = Integer 3
   Variable = -nooutput DummyR
   Mesh Velocity Variable = String "dSdt"
@@ -472,9 +469,8 @@ End
 Solver 2
  Equation = "partial update"
  Procedure = "MeshSolve" "MeshSolver"
-
- !Exec Solver = "Before Timestep"
- Exec Solver = "never"
+ Exec Solver = "Before Timestep"
+ !Exec Solver = "never"
  Variable = -dofs 3 "Partial Vertical MeshUpdate"
  Linear System Solver = Iterative
 
@@ -484,7 +480,7 @@ Solver 2
  Linear System Convergence Tolerance = 1.0e-12
  Linear System Residual Output = 50
 
- Steady State Convergence Tolerance = 1.0e-4
+ Steady State Convergence Tolerance = 1.0e-5
  !Bubbles in global system = False
  Exported Variable 1 = -dofs 1 "bedrock"
  Update Exported Variables = True
@@ -502,33 +498,17 @@ Solver 3
   !Bubbles in global system = False
 End 
 
-
 Solver 4
-!  Exec Solver = "Before All"
-  Exec Solver = "Never"
-  Equation = GroundedMaskIni
-  exec solver = "never"
-  Procedure = "ElmerIceSolvers" "GroundedSolver"
-  Variable = GroundedMask
-  Variable DOFs = 1
-
-  Toler = Real 1.0e-3
-  Bedrock Variable = String "Bedrock"
-  Bubbles in global system = False
-End
-
-Solver 5
   Equation = "Free Surface Sea/Shelf"
-  Exec Solver = "never"
+  Exec Solver = "Never"
   ! Element = "p:1 -tri b:1 -quad b:3 -wedge b:1 -brick b:4"
 
-  !Exec Solver = "After Timestep"
+ !Exec Solver = "After Timestep"
   Procedure =  "FreeSurfaceSolver" "FreeSurfaceSolver"
   Variable = "Zb"
   Variable DOFS =  1
   Exported Variable 1 = "Zb Residual"
   Exported Variable 1 DOFs = 1
-  Exported Variable 2 = "RefZb"
 
   ! Before Linsolve = "EliminateDirichlet" "EliminateDirichlet"
 
@@ -541,10 +521,10 @@ Solver 5
   Linear System Residual Output = 1
 
   Nonlinear System Max Iterations = 100
-  Nonlinear System Convergence Tolerance  = 1.0e-5 !1.0e-5
+  Nonlinear System Convergence Tolerance  = 1.0e-3 !1.0e-5
   Nonlinear System Relaxation Factor = 1.00
 
-  Steady State Convergence Tolerance = 1.0e-04
+  Steady State Convergence Tolerance = 1.0e-03
 
   Stabilization Method = Bubbles
   Apply Dirichlet = Logical True
@@ -553,14 +533,14 @@ Solver 5
 
 End
 
-Solver 6
+Solver 5
   Equation = "Free Surface Top"
-  Exec Solver = "never"
+  Exec Solver = "Never"
   ! Exec Solver = "Predictor-Corrector"
     !Element = "p:2 -tri b:1 -quad b:3 -wedge b:1 -brick b:4"
 
   !Exec Solver = "After Timestep"
-  Procedure =  "../SRC/FreeSurfaceSolver2" "FreeSurfaceSolver"
+  Procedure =  "../SRC/FreeSurfaceSolver2.so" "FreeSurfaceSolver"
   Variable = "Zs"
   Variable DOFs =  1
   Exported Variable 1 = "Zs Residual"
@@ -578,10 +558,10 @@ Solver 6
   Linear System Residual Output = 1
 
   Nonlinear System Max Iterations = 100
-  Nonlinear System Convergence Tolerance  = 1.0e-5 !1.0e-5
+  Nonlinear System Convergence Tolerance  = 1.0e-3 !1.0e-5
   Nonlinear System Relaxation Factor = 1.00
 
-  Steady State Convergence Tolerance = 1.0e-04
+  Steady State Convergence Tolerance = 1.0e-03
 
   Stabilization Method = Bubbles
   Apply Dirichlet = Logical True
@@ -593,7 +573,7 @@ End
 
 !! compute normal vectors
 !! the surfaces on which to compute normals are specified in boundary conditions
-Solver 7
+Solver 6
    Exec Solver = "Before Timestep"
    Equation = "Normal vector"
    Variable = "Normal Vector"   
@@ -608,57 +588,52 @@ Solver 7
    Bubbles in global system = False
 End
 
-
-Solver 8
-  Equation = "MapCoordinate"
-  Procedure = "StructuredMeshMapper" "StructuredMeshMapper"
-  Minimum Height = Real 1.0
+Solver 7
   Exec Solver = "Before Timestep"
-  Active Coordinate = Integer 3
-  Variable = -nooutput DummyR
-  Mesh Velocity Variable = String "dSdt"
-  Mesh Update Variable = String "dS"
-  Mesh Velocity First Zero = Logical True
-  Exported Variable 1 = -dofs 1 "dS"
-  Exported Variable 2 = -dofs 1 "dSdt"
-  Adjust Surface = Logical True
+  Equation = "GroundedMask"
+  Procedure = "ElmerIceSolvers" "GroundedSolver"
+  Variable = "GroundedMask"
+  Variable DOFs = 1
+
+  Toler = Real 1.0e-01
+  Bedrock Variable = String "bedrock"
+  Exported Variable 1 = -dofs 1 bedrock
   Bubbles in global system = False
 End
+
 !-------------------------
 ! the Stokes solver 
 !------------------------
-Solver 9
-!  Exec Solver = "Never"
+Solver 8
+  Exec Solver = "Never"
   Equation = "Stokes-Vec"
   Procedure = "IncompressibleNSVec" "IncompressibleNSSolver"
   Div-Curl Discretization = Logical False
-  !Element = "p:1 -tri b:1 -quad b:3 -wedge b:1 -brick b:4"
+  Element = "p:1 -tri b:1 -quad b:3 -wedge b:1 -brick b:4"
 
   !Variable = -dofs 4 "Flow Solution" [Velocity:3 Pressure:1]
 
   Optimize Bandwidth = Logical True
   Flow Model = Stokes
-  Stabilization Method = String Stabilized
+  Stabilization Method = String Bubbles !Stabilized
 
   !Non-linear iteration settings:
   !------------------------------ 
   Nonlinear System Max Iterations = 10
-  Nonlinear System Convergence Tolerance  = 1.0e-5 !1.0e-5
-  Nonlinear System Newton After Iterations = 3
+  Nonlinear System Convergence Tolerance  = 1.0e-3 !1.0e-5
+  Nonlinear System Newton After Iterations = 5
   Nonlinear System Newton After Tolerance = 1.0e-1
-  !Nonlinear System Relaxation Factor = #2/3
+  Nonlinear System Relaxation Factor = #2/3
 
-  !Viscosity Newton Relaxation Factor = $2.0/3.0 
+  Viscosity Newton Relaxation Factor = $2.0/3.0 
   !Nonlinear System Reset Newton = Logical True
 
-  include  ../SRC/linsys/gcr.sif
-  !include ../SRC/linsys/block_precon.sif
-  Mumps percentage increase working space = Integer 16000
+  include  ../SRC/linsys/mumps.sif
   ! mumps or gcr? Sophie used mumps, MLB used gcr.
-  !include  ../SRC/linsys/gcr.sif
+
   ! Convergence on timelevel (not required here)
   !---------------------------------------------
-  Steady State Convergence Tolerance = Real 1.0e-4
+  Steady State Convergence Tolerance = Real 1.0e-3
 
   !Relative Integration Order = -1
   Number of Integration Points = Integer 44 ! 21, 28, 44, 64, ...
@@ -676,8 +651,8 @@ End
 !-----------------------------------------------------
 ! Deformational heat solver, add output to body force (since keyword "friction heat" is not included in HeatSolve-Vec)
 !-----------------------------------------------------
-Solver 10
-  !Exec Solver = "Never"
+Solver 9
+  Exec Solver = "Never"
 
   Equation = DeformationalHeat
   Variable = Strain Heating
@@ -698,8 +673,8 @@ End
 !-----------------------------------------------------
 ! Heat solver in ice
 !-----------------------------------------------------
-Solver 11
-  Exec Solver = "Never"
+Solver 10
+ ! Exec Solver = "Never"
   Equation = String "Homologous Temperature Equation"
   Procedure =  File "HeatSolveVec" "HeatSolver"
   
@@ -708,21 +683,21 @@ Solver 11
 
   Number of Integration Points = Integer 64
   Optimize Bandwidth = Logical True
- Linear System Solver = "Direct"
- Linear System Direct Method = $directsolver
+ !Linear System Solver = "Direct"
+ !Linear System Direct Method = $directsolver
 
- !Linear System Solver = "Iterative"
- !Linear System Iterative Method = "GCR"
+  Linear System Solver = "Iterative"
+  Linear System Iterative Method = "GCR"
   Linear System GCR Restart = Integer 200
   Linear System Max Iterations = 15000
   Linear System Convergence Tolerance = 1.0E-08
   Linear System Abort Not Converged = True
-  Linear System Preconditioning = "ILU1"
+  Linear System Preconditioning = "ILU2"
   Linear System Residual Output = 100
   Nonlinear System Convergence Tolerance = 1.0e-5 !1.0E-05
   Nonlinear System Max Iterations = 50
   Nonlinear System Min Iterations = 1
-  Nonlinear System Relaxation Factor = Real 0.5
+  !Nonlinear System Relaxation Factor = Real 0.5
   Nonlinear System Convergence Measure = "solution"
 
   Steady State Convergence Tolerance = 1.0E-04
@@ -758,44 +733,14 @@ Solver 11
   !Calculate Loads = Logical True
 End
 
-Solver 12
+Solver 11
   Equation = Fw
-  Exec Solver = "never"
+  exec solver = never
   Procedure = "ElmerIceSolvers" "GetHydrostaticLoads"
   Variable = Fw[Fwater:3]
   Variable DOFs = 3
 End
 
-Solver 13
-  !Exec Solver = "Before Timestep"
-  Exec Solver = "never"
-  Equation = "GroundedMask"
-  Procedure = "ElmerIceSolvers" "GroundedSolver"
-  Variable = "GroundedMask"
-  Variable DOFs = 1
-
-  Toler = Real 1.0e-01
-  Bedrock Variable = String "bedrock"
-  Exported Variable 1 = -dofs 1 bedrock
-  Bubbles in global system = False
-End
-
-Solver 14
-  Exec Solver = "After timestep"
-  Equation = "2D surfaces"
-  Procedure = "StructuredProjectToPlane" "StructuredProjectToPlane"
-  Active Coordinate = Integer 3
-  Variable 1 = "Zs"
-  Variable 2 = "Zb"
-  Operator 1 = "sum"
-  Operator 2 = "sum"
-  Target Variable 1 = "ZsPlanar"
-  Target Variable 2 = "ZbPlanar"
-  Target Variable 1 Everywhere = Logical True
-  Target Variable 2 Everywhere = Logical True
-  Dot Product Tolerance = 1.0e-3
-  !Bubbles in global system = False
-End 
 !---------------------------------------------------
 !---------------- BOUNDARY CONDITIONS --------------
 !---------------------------------------------------
@@ -946,18 +891,16 @@ End
 Boundary Condition 16
   Name="side2 ice"
   Target Boundaries(1) = 16
-  !Periodic BC = 15
-  !Periodic BC Velocity 1 = Logical True
-  !Periodic BC Velocity 2 = Logical True
-  !Periodic BC Velocity 3 = Logical True
-  !Periodic BC Pressure = Logical True
-  
   Velocity 2 = 0.0
   Partial Vertical MeshUpdate 1 = Real 0.0
   Partial Vertical MeshUpdate 2 = Real 0.0
   Partial Vertical MeshUpdate 3 = Real 0.0
 End
 
+!! the last boundary conditions are top and bottom which are still left
+!! the order of the three following boundaries is important
+!! first the bed, then bed-sediment followed by glacier bed  and then the surface
+!! they have to come after the last targeted boundary (from the mesh.boundary file)
 
 Boundary Condition 17
   Name = "deep bedrock"
@@ -965,7 +908,6 @@ Boundary Condition 17
   Partial Vertical MeshUpdate 1 = Real 0.0
   Partial Vertical MeshUpdate 2 = Real 0.0
   Partial Vertical MeshUpdate 3 = Real 0.0
- 
   Bottom Surface = Variable "bedrock"
      Real LUA "tx[0] -  10*zscale"
 
@@ -973,64 +915,57 @@ Boundary Condition 17
     Heat Flux = Real #gthf
 End
 
-
 Boundary Condition 18
   Name = "bedrock - filler"
-   Bedrock = Variable Coordinate 1
-    Real
-      include "Initialisation/Dimensional_ICs/bed_dim.xy"
-    End
+ ! bedrock = Variable Coordinate 1
+ !     Real cubic
+ !     include "./bed_new.xy"
+  ! Adjust the position of the boundary so that it lies on the bedrock.
 
   Partial Vertical MeshUpdate 1 = Real 0.0
   Partial Vertical MeshUpdate 2 = Real 0.0
   Partial Vertical MeshUpdate 3 = Variable "Coordinate 3", "bedrock"
     Real LUA "tx[1] - tx[0] - minh"
-  
   ! Impose T = Tm on at the bottom of the ocean (otherwise, natural BC - i.e. continuous heat flux)
-  Temperature = Real 273.15
-  Temperature Condition = Variable "GroundedMask"    ! only apply temperature BC on ungrounded ice
-      Real Lua "-1*tx[0]"
+  Temperature = Variable Coordinate 1
+    Real 
+      include "Initialisation/Dimensional_ICs/Tb_dim.xy"
+    End
   End
-
 
 Boundary Condition  19
   Name = "interface"  
   Body ID = 4
  
+  !Zb = Equals bedrock
+  !Zb Condition = Variable GroundedMask
+   ! Real MATC "tx[0] + 0.5"
+ 
   Mid Surface  = Equals "Zb"
-
-  Zb = Equals bedrock
-  Zb Condition = Variable GroundedMask
-    Real MATC "tx[0] + 0.5"
  
   Normal-Tangential Velocity = Logical True
-  Flow Force BC = Logical True
-  Flow Solution Name = String "Flow Solution" 
 
   Velocity 1 = 0.0
-!  Velocity 2 = 0.0
-!Velocity 3 = 0.0
-!Velocity 1 Condition = Variable "GroundedMask"  
-!      Real MATC "tx[0] + 0.5"
+ 
+  Velocity 1 Condition = Variable "GroundedMask"  
+      Real MATC "tx[0] + 0.5"
 
-!  Slip Coefficient 1 = Variable "time"
-!    Real Procedure "../SRC/Buoyancy.so" "SeaSpring"   ! Buoyancy.f90 (and .so) have been modified to use body 3 (ice) instead of default body 1
-!  Compute Sea Spring = Logical True!
 
+  Flow Solution Name = String "Flow Solution" 
+
+  Slip Coefficient 1 = Variable "time"
+    Real Procedure "../SRC/Buoyancy.so" "SeaSpring"   ! Buoyancy.f90 (and .so) have been modified to use body 3 (ice) instead of default body 1
+  Compute Sea Spring = Logical True
+  
   Slip Coefficient 2 = Variable Coordinate 1
-    Real Procedure "ElmerIceUSF" "Sliding_Weertman"
+    Real Procedure "ElmerIceUSF" "SlidCoef_Contact"
   
   Slip Coefficient 3 = Variable Coordinate 1
-    Real Procedure "ElmerIceUSF" "Sliding_Weertman"
- 
-
- 
-  !Slip Coefficient 2 = Real 1.0E-6
-  !Slip Coefficient 3 = Real 1.0E-6
-
-!  External Pressure = Variable Coordinate 3
-!    Real Procedure "../SRC/Buoyancy.so" "SeaPressure"
-!  Compute Sea Pressure = Logical True
+    Real Procedure "ElmerIceUSF" "SlidCoef_Contact"
+  
+  External Pressure = Variable Coordinate 3
+    Real Procedure "../SRC/Buoyancy.so" "SeaPressure"
+  Compute Sea Pressure = Logical True
 
   ComputeNormal Condition = Variable GroundedMask
       Real MATC "tx[0] + 0.5"
@@ -1039,24 +974,38 @@ Boundary Condition  19
   Grounding Line Definition = String "Discontinuous"
   Test Contact Tolerance = Real 1E-3
 
+  ! SLIDING LAW
   Sliding Law = String Weertman
   Weertman Exponent = Real 1.0
   Weertman Friction Coefficient = Variable Temperature
-   Real lua "TDepSlidingExp(fcoeff,tx[0],dT,0,0)"
-  Weertman Linear Velocity = Real 1.0E-5
+   Real lua "TDepSlidingExp(fcoeff,tx[0],dT,0)"
+  Weertman Linear Velocity = Real 1.0E-10
 
   Partial Vertical MeshUpdate 1 = Real 0.0
   Partial Vertical MeshUpdate 2 = Real 0.0
   Partial Vertical MeshUpdate 3 = Real 0.0
+  !Partial Vertical MeshUpdate 3 = Variable "Coordinate 3", "Zb"
+  !  Real LUA "tx[1] - tx[0]"
 
+  !!!   Dirichlet Steady State Temperature Condition
+  !Temperature = Variable Coordinate 1
+  !  Real 
+  !    include "Initialisation/Dimensional_ICs/Tb_dim.xy"
+  !  End
+  
+  !!!  OR use frictional heating neumann condition
   Temperature = Real 273.15
   Temperature Condition = Variable "GroundedMask"    ! only apply temperature BC on ungrounded ice
       Real Lua "-1*tx[0]"
- 
+ ! Temperature Flux BC = Logical True
+ ! Heat Flux = Real 0.0
+ ! Heat Flux Condition = Variable "GroundedMask"    ! only apply temperature BC on ungrounded ice
+ !     Real Lua "tx[0]+0.5"
+
   Friction Loads = Variable Flow Solution Loads 1, Flow Solution Loads 2, Flow Solution Loads 3, Velocity 1, Velocity 2, Velocity 3
     Real Lua "frictionloads(tx[0],tx[1],tx[2],tx[3],tx[4],tx[5])"
-  Temperature Load = Variable Flow Solution Loads 1, Flow Solution Loads 2, Flow Solution Loads 3, Velocity 1, Velocity 2, Velocity 3
-    Real Lua "frictionloads(tx[0],tx[1],tx[2],tx[3],tx[4],tx[5])"
+  !Temperature Load = Variable Flow Solution Loads 1, Flow Solution Loads 2, Flow Solution Loads 3, Velocity 1, Velocity 2, Velocity 3
+  !  Real Lua "frictionloads(tx[0],tx[1],tx[2],tx[3],tx[4],tx[5])"
   
   Calculate Temperature Boundary Weights = Logical True
 
@@ -1065,14 +1014,13 @@ Boundary Condition  19
   FSSA Accumulation = Real 0.0
 End
 
-
 Boundary Condition 20
   Name = "free surface"
   Top Surface = Equals "Zs"
   Body ID = 5
-  
-  Temperature = Real #Tsurf 
-  ComputeNormal = Logical False
+  Temperature = Real #surfT ! -10 degrees
+  !Body Id = 5
+  ComputeNormal = Logical True
 
   Partial Vertical MeshUpdate 1 = Real 0.0
   Partial Vertical MeshUpdate 2 = Real 0.0

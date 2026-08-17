@@ -555,7 +555,7 @@ Solver 6
     !Element = "p:2 -tri b:1 -quad b:3 -wedge b:1 -brick b:4"
 
   !Exec Solver = "After Timestep"
-  Procedure =  "./SRC/FreeSurfaceSolver2.so" "FreeSurfaceSolver"
+  Procedure =  "../SRC/FreeSurfaceSolver2.so" "FreeSurfaceSolver"
   Variable = "Zs"
   Variable DOFs =  1
   Exported Variable 1 = "Zs Residual"
@@ -646,10 +646,10 @@ Solver 9
   !Viscosity Newton Relaxation Factor = $2.0/3.0 
   !Nonlinear System Reset Newton = Logical True
 
-  include  ./SRC/linsys/gcr.sif
+  include  ../SRC/linsys/gcr.sif
   Mumps percentage increase working space = Integer 16000
   ! mumps or gcr? Sophie used mumps, MLB used gcr.
-  !include  ./SRC/linsys/gcr.sif
+  !include  ../SRC/linsys/gcr.sif
   ! Convergence on timelevel (not required here)
   !---------------------------------------------
   Steady State Convergence Tolerance = Real 1.0e-4
@@ -912,7 +912,7 @@ Boundary Condition 14
   Velocity 2 = 0.0
   Flow Force BC = Logical True
   External Pressure = Variable Coordinate 3
-      Real Procedure "./SRC/Buoyancy.so" "SeaPressure"
+      Real Procedure "../SRC/Buoyancy.so" "SeaPressure"
   Compute Sea Pressure = Logical True
 
   Partial Vertical MeshUpdate 1 = Real 0.0
@@ -1005,7 +1005,7 @@ Boundary Condition  19
       Real MATC "tx[0] + 0.5"
 
   Slip Coefficient 1 = Variable "time"
-    Real Procedure "./SRC/Buoyancy.so" "SeaSpring"   ! Buoyancy.f90 (and .so) have been modified to use body 3 (ice) instead of default body 1
+    Real Procedure "../SRC/Buoyancy.so" "SeaSpring"   ! Buoyancy.f90 (and .so) have been modified to use body 3 (ice) instead of default body 1
   Compute Sea Spring = Logical True
 
   Slip Coefficient 2 = Variable Coordinate 1
@@ -1015,7 +1015,7 @@ Boundary Condition  19
     Real Procedure "ElmerIceUSF" "SlidCoef_Contact"
   
   External Pressure = Variable Coordinate 3
-    Real Procedure "./SRC/Buoyancy.so" "SeaPressure"
+    Real Procedure "../SRC/Buoyancy.so" "SeaPressure"
   Compute Sea Pressure = Logical True
 
   ComputeNormal Condition = Variable GroundedMask
