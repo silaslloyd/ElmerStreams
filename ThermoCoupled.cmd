@@ -1,9 +1,10 @@
 #!/bin/bash
 #SBATCH --output=./slurms/ThermoCoupled_slurm-%j.out
 #SBATCH --job-name="FlowlineThermoCoupled"
-#SBATCH --ntasks=64
+#SBATCH --ntasks=128 #64
 #SBATCH --time=72:00:00
 #SBATCH --mail-type=all
+#SBATCH --nodelist=tethys-3g-09,tethys-3g-10
 
 set -e
 

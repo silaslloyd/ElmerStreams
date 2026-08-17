@@ -189,7 +189,6 @@ SUBROUTINE SheetSolverhw( Model,Solver,dt,TransientSimulation )
       END IF
 
       CALL LocalMatrix(  Element, n, nd+nb, dim, dimsheet, hw(hwPerm(Element % NodeIndexes(1:n))), ctperm, ctvals)
-      
     
     END DO
 
@@ -666,7 +665,7 @@ CONTAINS
           DO i=1, n   ! ... for each node within the element (LOCAL nodal index)
             j = Element % NodeIndexes(i) 
             IF (ctvals(ctperm(j)) .LE. 0) THEN
-            MASS(i,i) = 1
+              MASS(i,i) = 1
             END IF
           END DO
       END IF

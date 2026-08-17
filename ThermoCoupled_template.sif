@@ -285,8 +285,8 @@ Body Force 1
   Temperature Lower Limit = Real 0.0
 
   NodalCoords 1 = Equals Coordinate 1
-NodalCoords 2 = Equals Coordinate 2
-NodalCoords 3 = Equals Coordinate 3
+  NodalCoords 2 = Equals Coordinate 2
+  NodalCoords 3 = Equals Coordinate 3
 End
 
 ! Water filler
@@ -299,8 +299,8 @@ Body Force 2
   Temperature Lower Limit = Real 0.0
 
   NodalCoords 1 = Equals Coordinate 1
-NodalCoords 2 = Equals Coordinate 2
-NodalCoords 3 = Equals Coordinate 3
+  NodalCoords 2 = Equals Coordinate 2
+  NodalCoords 3 = Equals Coordinate 3
 End
 
 ! Ice 
@@ -318,8 +318,8 @@ Body Force 3 !1
   Temperature Lower Limit = Real 0.0  
 
   NodalCoords 1 = Equals Coordinate 1
-NodalCoords 2 = Equals Coordinate 2
-NodalCoords 3 = Equals Coordinate 3
+  NodalCoords 2 = Equals Coordinate 2
+  NodalCoords 3 = Equals Coordinate 3
 End 
 
 Body Force 4 !2
@@ -350,7 +350,10 @@ Body Force 4 !2
     
     Water Sheet Thickness Passive = Variable "ColdTempMask"
     Real Lua "-tx[0]"
-    !Passive Element Min Nodes = Integer 1
+    ! By default, an element is passive only if all of its nodes are passive.
+    ! Alternatively, use Passive Element Min Nodes to specify the minimum number of
+    ! passive nodes an element must have to be treated as passive.
+    !Passive Element Min Nodes = Integer 1  
 End
 
 Body Force 5
@@ -864,17 +867,17 @@ Solver 16
   Procedure = "SRC/SheetSolverhw" "SheetSolverhw"
 
   !!Linear System Solver = "Direct"
-  Linear System Direct Method = $directsolver
+  !Linear System Direct Method = $directsolver
 
   Linear System Solver = "Iterative"
   Linear System Iterative Method = "GCR"
   Linear System GCR Restart = Integer 200
-  Linear System Max Iterations = 15000
-  Linear System Convergence Tolerance = 1.0e-6 !1.0E-08
-  Linear System Abort Not Converged = True
-  Linear System Preconditioning = "ILU1"
+  Linear System Max Iterations = 1500
+  Linear System Convergence Tolerance = 1.0e-8 !1.0E-08
+  Linear System Abort Not Converged = False !True
+  Linear System Preconditioning = "ILU8" !"ILU1"
   Linear System Residual Output = 100
-  Nonlinear System Convergence Tolerance = 1.0e-5 !1.0E-05
+  Nonlinear System Convergence Tolerance = 1.0e-6 !1.0E-05
   Nonlinear System Max Iterations = 200
   Nonlinear System Min Iterations = 1
   Nonlinear System Relaxation Factor = Real 0.5
@@ -883,11 +886,11 @@ Solver 16
  
   Nonlinear System Newton After Iterations = 20
   Nonlinear System Newton After Tolerance = 1.0e-2
-  Nonlinear System Relaxation Factor = #0.1
+  Nonlinear System Relaxation Factor = #0.5
 
 !  Sheet Integration Method = String "Implicit"
 
-  Steady State Convergence Tolerance = 1.0E-04
+  Steady State Convergence Tolerance = 1.0E-05
   Exported Variable 1 = -dofs 1 "Melt rate"      ! Other variables calculeted in the solver that we want to export ?
   Exported Variable 2 = -dofs 1 "Effective Pressure Output"    ! defined in Materials section
   Exported Variable 3 = -dofs 3 "Water Flux"
