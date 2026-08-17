@@ -6,9 +6,6 @@
 #SBATCH --mail-type=all
 
 pwd
-
-
-pwd
 set -e
 
 MODE=""
@@ -32,7 +29,7 @@ done
 echo "BCs: $MODE"
 echo "Name: $NAME"
 
-SLURM_NTASKS=32
+#SLURM_NTASKS=32
 
 echo "Running on $SLURM_NTASKS partitions"
 echo "----------------------------------"
