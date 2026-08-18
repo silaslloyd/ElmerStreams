@@ -33,7 +33,7 @@ $adapTol = 1.0e-2
 
 Header
   Mesh DB "footprint" ""
-  Results Directory "VTUs/InitialT"
+  Results Directory "Initialisation/VTUs/InitialT"
 End
 
 

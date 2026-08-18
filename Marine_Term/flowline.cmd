@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --output=./slurms/Initialise_slurm-%j.out
+#SBATCH --output=./slurms/Flowline_slurm-%j.out
 #SBATCH --job-name="Flowline"
 #SBATCH --ntasks=512
 #SBATCH --time=72:00:00
@@ -37,6 +37,7 @@ echo "Starting Initialisation"
 
 echo ""
 echo "Building Result Directories"
+mkdir -p FlowlineTCVTUs
 cd Initialisation
 mkdir -p ScriptOutputs
 mkdir -p VTUs
@@ -91,6 +92,6 @@ elif [[ "$MODE" == "symmetric" ]]; then
 fi
 SIF_FILE="${NAME}.sif"
 sed "s/__RUNNAME__/${NAME}/g" "${SIF_TEMPLATE}" > "${SIF_FILE}"
-mkdir -p "ThermoCoupledScriptOutputs"
-nohup mpirun -np $SLURM_NTASKS ElmerSolver "${SIF_FILE}" > ThermoCoupledScriptOutputs/${NAME}.out 
+mkdir -p "FlowlineTCScriptOutputs"
+nohup mpirun -np $SLURM_NTASKS ElmerSolver "${SIF_FILE}" > FlowlineTCScriptOutputs/${NAME}.out 
 echo "DONE"

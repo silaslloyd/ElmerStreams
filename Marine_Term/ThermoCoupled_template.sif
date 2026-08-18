@@ -33,7 +33,7 @@ $adapTol = 1.0e-2
 
 Header
   Mesh DB "footprint" ""
-  Results Directory "VTUs/__RUNNAME__"
+  Results Directory "FlowlineTCVTUs/__RUNNAME__"
 End
 
 
