@@ -944,6 +944,7 @@ Solver 17
   Exported Variable 2 = -dofs 1 "Effective Pressure Output"    ! defined in Materials section
   Exported Variable 3 = -dofs 3 "Water Flux"
   Exported Variable 4 = -dofs 1 "Hydraulic Conductivity Output"  ! defined in Materials section
+  Exported Variable 5 = -dofs 1 -elem "x Water flux"
 
   Nonlinear Update Exported Variables = Logical True
   Update Exported Variables = Logical True
