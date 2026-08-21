@@ -165,7 +165,7 @@ SUBROUTINE SheetSolverhw( Model,Solver,dt,TransientSimulation )
     DO t=1,Active   ! for each active element..
       Element => GetActiveElement(t)   ! information about that element
       num_cold = 0._dp   ! counter for number of cold nodes in the element
-      IF (ParEnv % myPe .NE. Element % partIndex) CYCLE
+      !IF (ParEnv % myPe .NE. Element % partIndex) CYCLE   ! if this line is left in, sheetsolver does not manage any successful iterations
       n  = Element % TYPE % NumberOfNodes !GetElementNOFNodes()        ! number of nodes
       nd = GetElementNOFDOFs()         ! number of degrees of freedom (DOF)
       nb = GetElementNOFBDOFs()        ! number of BUBBLES DOFs (NOT boundary DOFs)
@@ -188,7 +188,7 @@ SUBROUTINE SheetSolverhw( Model,Solver,dt,TransientSimulation )
         numberofpassiveneighbours(Element % NodeIndexes(1:n)) = numberofpassiveneighbours(Element % NodeIndexes(1:n)) + 1
       END IF
 
-      CALL LocalMatrix(  Element, n, nd+nb, dim, dimsheet, hw(hwPerm(Element % NodeIndexes(1:n))), ctperm, ctvals)
+      CALL LocalMatrix(  Element, n, nd + nb, dim, dimsheet, hw(hwPerm(Element % NodeIndexes(1:n))), ctperm, ctvals)
     
     END DO
 
@@ -203,6 +203,7 @@ SUBROUTINE SheetSolverhw( Model,Solver,dt,TransientSimulation )
     ! And finally, solve:
     !--------------------
     Norm = DefaultSolve()
+    !IF ( ParEnv % PEs > 1) CALL ParallelSumVector( Solver % Matrix, hw, 2)
     IF( DefaultConverged() ) EXIT    
 
   END DO
@@ -217,6 +218,7 @@ SUBROUTINE SheetSolverhw( Model,Solver,dt,TransientSimulation )
       ctvals(ctperm(I)) = -1.0
     END IF
   END DO
+  IF ( ParEnv % PEs > 1) CALL ParallelSumVector( Solver % Matrix, ctvals, 2)
   !PRINT *, ParEnv % myPe, ": corrected", correctedvalues, " nodes from temperate to cold"
   
 !---------------------------------------------------
@@ -225,7 +227,7 @@ SUBROUTINE SheetSolverhw( Model,Solver,dt,TransientSimulation )
 ! Do this using whichever form was used for the linearisation (i.e. Newton or Picard)
 DO t=1, Solver % NumberOfActiveElements   ! for each active element...
   Element => GetActiveElement(t,Solver)
-  IF (ParEnv % myPe .NE. Element % partIndex) CYCLE
+  !IF (ParEnv % myPe .NE. Element % partIndex) CYCLE
 
   n = GetElementNOFNodes(Element)         ! number of nodes in element
   nd = GetElementNOFDOFs()                ! number of degrees of freedom (DOF)
@@ -321,7 +323,7 @@ CONTAINS
       ELSE
         qh(i,1:dimsheet) = 0
       END IF
-      WRITE(*,*) 'qh', qh(i,1:dimsheet)
+      !WRITE(*,*) 'qh', qh(i,1:dimsheet)
 
       ! Coefficient of grad(hw) in flux linearisation
       ! ----------------------------------------------
@@ -330,7 +332,7 @@ CONTAINS
       ELSE
         QQh(i) = HydraulicConductivity(i)*dEffectivePressuredx(i)
       END IF
-      WRITE(*,*) 'QQh', QQh(i)
+      !WRITE(*,*) 'QQh', QQh(i)
 
       ! Order 1 term in flux linearisation
       ! ------------------------------------
@@ -339,7 +341,7 @@ CONTAINS
       ELSE
         q0(i,1:dimsheet) = - HydraulicConductivity(i)*gradPhi0(i,1:dimsheet)
       END IF
-      WRITE(*,*) 'q0', q0(i,1:dimsheet)
+      !WRITE(*,*) 'q0', q0(i,1:dimsheet)
     END DO
 
 ! ----------------------------------------------
@@ -564,6 +566,12 @@ CONTAINS
     TYPE(GaussIntegrationPoints_t) :: IP
     TYPE(ValueList_t), POINTER :: BodyForce, Material
     TYPE(Nodes_t) :: Nodes
+    REAL(KIND=dp) :: dqdhAtIP(dimsheet), dhwdxAtIP(dimsheet), gradPhi0AtIP(dimsheet), graddNdhAtIP(dimsheet)
+    REAL(KIND=dp) :: gradNAtIP(dimsheet)
+    REAL(KIND=dp) :: HydraulicConductivityAtIP, EffectivePressureAtIP, dEffectivePressuredhAtIP
+    REAL(KIND=dp) :: ddEffectivePressuredhAtIP, dHydraulicConductivitydxAtIP
+    REAL(KIND=dp) :: dEffectivePressuredh(n), ddEffectivePressuredh(n)
+
     SAVE Nodes
 !------------------------------------------------------------------------------
 
@@ -637,6 +645,52 @@ CONTAINS
           MASS(p,q) = MASS(p,q) + Weight * Basis(q) * Basis(p)
         END DO
       END DO
+
+      ! ! Water sheet thickness (from previous iteration, I hope) at integration point
+      ! !--------------------------------------------------
+      ! hwAtIP = SUM( nodalhw(1:n) * Basis(1:n) )   ! hw
+      ! dhwdxAtIP = MATMUL( nodalhw(1:n) , dBasisdx(1:n,1:dimsheet))   ! grad(hw)
+
+      ! !Gradient Values at IPs
+      ! gradPhi0AtIP = MATMUL( Phi0(1:n) , dBasisdx(1:n,1:dimsheet) )  ! where N = Phi0 - Phi
+      ! gradNAtIP = MATMUL( EffectivePressure(1:n) , dBasisdx(1:n,1:dimsheet) )
+      ! graddNdhAtIP = MATMUL( dEffectivePressuredh(1:n) , dBasisdx(1:n,1:dimsheet) )
+
+      ! !Non Gradient Values at IPs
+      ! HydraulicConductivityAtIP = SUM( HydraulicConductivity(1:n) * Basis(1:n) )
+
+      ! !IF (num_cold > 0._dp) THEN     
+      ! !    HydraulicConductivityAtIP = 0._dp
+      ! !END IF
+
+      ! EffectivePressureAtIP = SUM( EffectivePressure(1:n) * Basis(1:n) )
+      ! dEffectivePressuredhAtIP = SUM( dEffectivePressuredh(1:n) * Basis(1:n) )
+      ! dHydraulicConductivitydxAtIP = SUM( dHydraulicConductivitydx(1:n) * Basis(1:n) )
+      
+      ! q0AtIP = -HydraulicConductivityAtIP*gradPhi0AtIP
+
+      ! Weight = IP % s(t) * DetJ
+      
+      ! STIFF(1:nd,1:nd) = STIFF(1:nd,1:nd) - Weight * &
+      !         (HydraulicConductivityAtIP)*dEffectivePressuredhAtIP * &
+      !     MATMUL( dBasisdx, TRANSPOSE( dBasisdx ) )
+      ! DO q=1,nd
+      !   ! Melt source
+      !   ! ------------------------------
+      !   FORCE(q) = FORCE(q) + Weight * LoadAtIP * Basis(q)
+
+      !   !RHS FLUX TERM
+      !   FORCE(q) = FORCE(q) + Weight * SUM( dBasisdx(q,1:dimsheet)*q0AtIP(1:dimsheet) )
+
+      !   DO p=1,nd
+      !     MASS(p,q) = MASS(p,q) + Weight * Basis(q) * Basis(p)
+      !   !  IF((num_cold >0) .AND. (p .NE. q)) THEN 
+      !   !    MASS(p,q) = 0._dp
+      !   !  END IF
+      !   END DO
+
+      ! END DO
+
     END DO    
     
     !___FOR ALL TEMPERATE ELEMENTS CHECK IF ANY OF THE NODES ARE COLD____
