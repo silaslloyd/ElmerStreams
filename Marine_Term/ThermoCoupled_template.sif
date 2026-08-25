@@ -359,8 +359,8 @@ Body Force 4 !2
     Hydraulic Conductivity Output = Variable "Effective Pressure Output"
     Real LUA "conductivity(tx[0])"
     
-   ! Water Sheet Thickness Passive = Variable "ColdTempMask"
-   ! Real Lua "-tx[0]"
+    Water Sheet Thickness Passive = Variable "ColdTempMask"
+    Real Lua "-tx[0]"
    ! Passive Element Min Nodes = Integer 1
 End
 
