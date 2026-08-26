@@ -597,11 +597,10 @@ CONTAINS
 
       DO q=1,nd
         ! MELT SOURCE
-        ! Only include on temperate nodes (in both fully and partially temperate elements)
         j = Element % NodeIndexes(q)
-        IF (ctvals(ctperm(j)) .GE. 0) THEN
+        !IF (ctvals(ctperm(j)) .GE. 0) THEN
           FORCE(q) = FORCE(q) + Weight * LoadAtIP * Basis(q)
-        END IF
+        !END IF
 
         ! RHS FLUX TERM
         ! Only include in elements with all nodes temperate
@@ -609,25 +608,9 @@ CONTAINS
           FORCE(q) = FORCE(q) + Weight * SUM( dBasisdx(q,1:dimsheet)*q0AtIP(1:dimsheet) )
         END IF
 
-        DO p=1,nd
-          jj = Element % NodeIndexes(p)
-          IF ((ctvals(ctperm(j)) .LE. 0) .OR. (ctvals(ctperm(jj)) .LE. 0)) THEN
-            IF (p .EQ. q) THEN
-              ! Set diagonal entries corresponding to cold nodes to 1
-              ! (With setting FORCE and STIFF to 0 in this row, this imposes hwnew = hwold)
-              MASS(p,q) = 1._dp
-            ELSE
-            ! IF (p .NE. q) THEN
-              ! Set off-diagonal entries where one of the indices corresponds to a cold node to 0
-              ! (So there is no matrix contribution from cold nodes)
-              MASS(p,q) = 0._dp
-            END IF
-
-          ELSE            
-            ! Mass matrix represents time derivative term on fully temperate nodes
+        DO p=1,nd        
+            ! Mass matrix represents time derivative term
             MASS(p,q) = MASS(p,q) + Weight * Basis(q) * Basis(p)
-
-          END IF
 
         !  IF((num_cold >0) .AND. (p .NE. q)) THEN 
         !    MASS(p,q) = 0._dp
@@ -635,7 +618,20 @@ CONTAINS
         END DO
 
       END DO
-    END DO    
+
+    END DO
+    
+    ! Modify MASS and FORCE for cold nodes so that we are solving dh/dt=0 on cold nodes
+    ! (Note that STIFF has already been set to zero)
+    IF (num_cold .GE. 0) THEN
+      DO i = 1,n
+        j = Element % NodeIndexes(i)
+        IF (ctvals(ctperm(j)) .LE. 0) THEN
+          MASS(i,i) = 1._dp
+          FORCE(i) = 0._dp
+        END IF
+      END DO
+    END IF
 
 
   !  num_cold = 0._dp
