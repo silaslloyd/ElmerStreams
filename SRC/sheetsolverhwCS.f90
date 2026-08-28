@@ -585,20 +585,20 @@ CONTAINS
 
       Weight = IP % s(t) * DetJ
 
-      ! Set the stiffness matrix (flux term) to zero if any nodes in the element are cold
-      ! (Alongside setting corresponding FORCE term to zero, ensures no flux into cold regions)
-      IF (num_cold .GE. 0) THEN
-        STIFF(1:nd,1:nd) = 0._dp
-      ELSE 
+      ! FLUX TERM in sitffness matrix
+      ! (which will later be set to zero on elements with at least one cold node)
+      !IF (num_cold > 0) THEN
+      !  STIFF(1:nd,1:nd) = 0._dp
+      !ELSE 
         STIFF(1:nd,1:nd) = STIFF(1:nd,1:nd) - Weight * &
               (HydraulicConductivityAtIP)*dEffectivePressuredhAtIP * &
               MATMUL( dBasisdx, TRANSPOSE( dBasisdx ) )
-      END IF
+      !END IF
 
       DO q=1,nd
         ! MELT SOURCE
         j = Element % NodeIndexes(q)
-        !IF (ctvals(ctperm(j)) .GE. 0) THEN
+        !IF (ctvals(ctperm(j)) > 0) THEN
           FORCE(q) = FORCE(q) + Weight * LoadAtIP * Basis(q)
         !END IF
 
@@ -621,12 +621,21 @@ CONTAINS
 
     END DO
     
-    ! Modify MASS and FORCE for cold nodes so that we are solving dh/dt=0 on cold nodes
-    ! (Note that STIFF has already been set to zero)
-    IF (num_cold .GE. 0) THEN
+    ! Set STIFF = 0 on elements with at least one cold node.
+    ! Modify MASS and FORCE for cold nodes so that we are solving dh/dt=0 on cold nodes.
+    IF (num_cold > 0) THEN
+      STIFF = STIFF*0._dp
+      !FORCE = FORCE*0._dp
+      !MASS = MASS*0._dp
       DO i = 1,n
         j = Element % NodeIndexes(i)
         IF (ctvals(ctperm(j)) .LE. 0) THEN
+          DO k = 1,n
+            ! Set mass matrix entries associated with cold nodes to zero - NECESSARY, otherwise solution diverges
+            MASS(i,k) = 0._dp
+            MASS(k,i) = 0._dp
+          END DO
+          ! Then set the MASS diagonal associated with the cold node to 1
           MASS(i,i) = 1._dp
           FORCE(i) = 0._dp
         END IF
