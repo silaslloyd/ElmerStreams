@@ -13,11 +13,11 @@ NAME=""
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        periodic)
-            MODE="periodic"
+        careful)
+            MODE="careful"
             ;;
-        symmetric)
-            MODE="symmetric"
+        sloppy)
+            MODE="sloppy"
             ;;
         *)
             NAME="$1"
@@ -70,6 +70,17 @@ echo "Done"
 echo""
 
 
+if [[ "$MODE" == "careful" ]]; then
+        HYDROLOGY_SOLVER="sheetsolverhwCS.f90"
+elif [[ "$MODE" == "sloppy" ]]; then
+        HYDROLOGY_SOLVER="sheetsolverhw.f90"
+fi
+
+echo "Compile hydrology solver"
+elmerf90 ./../SRC/$HYDROLOGY_SOLVER -o ./../SRC/SheetSolverhw.so
+echo "Done"
+
+
 SCRIPT_FOLDER="./Initialisation"
 cd "$SCRIPT_FOLDER" || { echo "Folder $SCRIPT_FOLDER not found"; exit 1; }
 
@@ -85,11 +96,7 @@ echo "Done"
 echo ""
 echo "Running Full Thermo_Coupled run"
 
-if [[ "$MODE" == "periodic" ]]; then
-        SIF_TEMPLATE="ThermoCoupled_Periodic_template.sif"
-elif [[ "$MODE" == "symmetric" ]]; then
-        SIF_TEMPLATE="ThermoCoupled_template.sif"
-fi
+SIF_TEMPLATE="ThermoCoupled_template.sif"
 SIF_FILE="${NAME}.sif"
 sed "s/__RUNNAME__/${NAME}/g" "${SIF_TEMPLATE}" > "${SIF_FILE}"
 mkdir -p "FlowlineTCScriptOutputs"
