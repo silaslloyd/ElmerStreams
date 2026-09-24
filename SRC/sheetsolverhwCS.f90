@@ -59,7 +59,7 @@ SUBROUTINE SheetSolverhw( Model,Solver,dt,TransientSimulation )
   REAL(KIND=dp), POINTER :: hw(:), qw(:), ctvals(:), xvals(:)
   REAL(KIND=dp), ALLOCATABLE :: hwOld(:)  ! copy of values to retain when pointer is overwritten by new iteration values
   INTEGER, POINTER :: hwPerm(:), qwPerm(:), ctperm(:), Xperm(:)  ! Used to match up node number with solution value at that node (not obvious due to how Elmer stores values)
-  INTEGER, ALLOCATABLE :: hwOldPerm(:), coordinationnumber(:), numberofpassiveneighbours(:)  ! copy of values to retain when pointer is overwritten by new iteration values
+  INTEGER, ALLOCATABLE :: hwOldPerm(:) !, coordinationnumber(:), numberofpassiveneighbours(:)  ! copy of values to retain when pointer is overwritten by new iteration values
   TYPE(Nodes_t) :: ElementNodes
   INTEGER :: dim, qwNDOFs, k, rankA, rankM, dimsheet
   !REAL(KIND=dp), ALLOCATABLE :: nodalhw(:), dhwdx(:,:), gradPhi0(:,:), dBasisdx(:,:), nodalhwOld(:), dhwdxOld(:,:), nodalqw(:,:)
@@ -91,8 +91,8 @@ SUBROUTINE SheetSolverhw( Model,Solver,dt,TransientSimulation )
       DEALLOCATE( hwOld, hwOldPerm )
     END IF
 
-    ALLOCATE( hwOld(m), hwOldPerm(m), MASS(n,n), STIFF(n,n), LOAD(n), FORCE(n), &
-         coordinationnumber(m), numberofpassiveneighbours(m), STAT=istat )
+    ALLOCATE( hwOld(m), hwOldPerm(m), MASS(n,n), STIFF(n,n), LOAD(n), FORCE(n), STAT=istat) !&
+        !coordinationnumber(m), numberofpassiveneighbours(m), STAT=istat )
 
     IF ( istat /= 0 ) THEN
       CALL FATAL( 'SheetSolver', 'Memory allocation error' )
@@ -161,15 +161,15 @@ SUBROUTINE SheetSolverhw( Model,Solver,dt,TransientSimulation )
     !WRITE(*,*) Active, " active elements"
 
     ! per-node counter initialization
-    coordinationnumber=0
-    numberofpassiveneighbours=0
+    !coordinationnumber=0
+    !numberofpassiveneighbours=0
     
     DO t=1,Active   ! for each active element..
       Element => GetActiveElement(t)   ! information about that element
-      !WRITE(*,*) "___________________"
-      !WRITE(*,*) "ELEMENT", t
-      num_cold = 0._dp ! REMOVED, AS UNUSED IN THIS CONTEXT
-      !IF (ParEnv % myPe .NE. Element % partIndex) CYCLE
+    !  !WRITE(*,*) "___________________"
+    !  !WRITE(*,*) "ELEMENT", t
+    !  num_cold = 0._dp ! REMOVED, AS UNUSED IN THIS CONTEXT
+    !  !IF (ParEnv % myPe .NE. Element % partIndex) CYCLE
       
       n  = Element % TYPE % NumberOfNodes !GetElementNOFNodes()        ! number of nodes
       nd = GetElementNOFDOFs()         ! number of degrees of freedom (DOF)
@@ -178,18 +178,18 @@ SUBROUTINE SheetSolverhw( Model,Solver,dt,TransientSimulation )
       dimsheet = Element % TYPE % DIMENSION
 
       ! Set per-node counters for coordination number and number of passive elements for later post-processing step
-      coordinationnumber(Element % NodeIndexes(1:n)) = coordinationnumber(Element % NodeIndexes(1:n)) + 1
-      DO i=1, n   ! ... for each node within the element (LOCAL nodal index)
-        j = Element % NodeIndexes(i) 
-        IF (ctvals(ctperm(j)) .LE. 0) THEN
-          num_cold = num_cold + 1
-        END IF
-      END DO
+      !coordinationnumber(Element % NodeIndexes(1:n)) = coordinationnumber(Element % NodeIndexes(1:n)) + 1
+      !DO i=1, n   ! ... for each node within the element (LOCAL nodal index)
+      !  j = Element % NodeIndexes(i) 
+      !  IF (ctvals(ctperm(j)) .LE. 0) THEN
+      !    num_cold = num_cold + 1
+      !  END IF
+      !END DO
 
-      IF (num_cold > 0._dp) THEN
-      !IF (CheckPassiveElement(Element)) THEN
-        numberofpassiveneighbours(Element % NodeIndexes(1:n)) = numberofpassiveneighbours(Element % NodeIndexes(1:n)) + 1
-      END IF
+      !IF (num_cold > 0._dp) THEN
+      !!IF (CheckPassiveElement(Element)) THEN
+      !  numberofpassiveneighbours(Element % NodeIndexes(1:n)) = numberofpassiveneighbours(Element % NodeIndexes(1:n)) + 1
+      !END IF
 
      !WRITE(*,*) "___________________"
 
@@ -220,13 +220,13 @@ SUBROUTINE SheetSolverhw( Model,Solver,dt,TransientSimulation )
   END DO
 
   ! Correct orphan "left-over" temperate nodes with no connection to the hydrologic system to cold
-  correctedvalues = 0
-  DO I= 1,Model % Mesh % NumberOfNodes
-    IF (coordinationnumber(I) > 0 .AND. ( coordinationnumber(I) .EQ. numberofpassiveneighbours(I))) THEN
-      ctvals(ctperm(I)) = -1.0
-    END IF
-  END DO
-  IF ( ParEnv % PEs > 1) CALL ParallelSumVector( Solver % Matrix, ctvals, 2)
+  !correctedvalues = 0
+  !DO I= 1,Model % Mesh % NumberOfNodes
+  !  IF (coordinationnumber(I) > 0 .AND. ( coordinationnumber(I) .EQ. numberofpassiveneighbours(I))) THEN
+  !    ctvals(ctperm(I)) = -1.0
+  !  END IF
+  !END DO
+  !IF ( ParEnv % PEs > 1) CALL ParallelSumVector( Solver % Matrix, ctvals, 2)
 
   !PRINT *, ParEnv % myPe, ": corrected", correctedvalues, " nodes from temperate to cold"
   
