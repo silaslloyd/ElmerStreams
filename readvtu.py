@@ -46,8 +46,8 @@ print(len(temp))
 
 print(mesh.point_data)
 
-#for key in mesh.point_data:     # print all the key (i.e. varaible) names
-#    print(key)
+for key in mesh.point_data:     # print all the key (i.e. varaible) names
+    print(key)
 
 ## Save the temperature into a file using pickle
 filename = 'temp_pickle_test'       # name of file to save data into
@@ -89,19 +89,47 @@ for i in bed_ids:
     if yvals[i] == y_centre:
         bed_centre_ids.append(i)
 
-# Find the value of the variables at the bed,
-# and put into a dictionary with node ids as keys
+# Find the value of the variables at the bed, and put into a dictionary with node ids as keys
 temp_bed_dict = {nid: temp[nid] for nid in bed_centre_ids}
 x_bed_dict = {nid: xvals[nid] for nid in bed_centre_ids}
 
-x_bed_dict_sorted = {nid: x for nid, x in sorted(x_bed_dict.items(), key=lambda item: item[1])}
-temp_bed_dict_sorted = {nid: temp_bed_dict[nid] for nid in x_bed_dict_sorted.keys}
+# Sort the dictionaries of bed values so that they are in order of increasing x
+x_bed_dict_sorted = {}
+temp_bed_dict_sorted = {}
+for key in sorted(x_bed_dict, key=x_bed_dict.get):      # https://www.geeksforgeeks.org/python/sort-python-dictionary-by-value/
+    x_bed_dict_sorted[key] = x_bed_dict[key]
+    temp_bed_dict_sorted[key] = temp_bed_dict[key]      # note: x and other variable dictionaries have the same keys: the node ids
 
-#temp_bed = [temp[nid] for x, nid in x_bed_dict_sorted]
+# Function for creating a dictionary of the basal values of a given variable, in order of increasing x
+def extract_basal_vals(var_name): #,x_bed_dict):
+    var = mesh.point_data[var_name]
+    var_bed_dict = {nid: var[nid] for nid in bed_centre_ids}
+    var_bed_dict_sorted = {}
+    for key in x_bed_dict_sorted:
+        var_bed_dict_sorted[key] = var_bed_dict[key]      # note: x and other variable dictionaries have the same keys: the node ids
+    return var_bed_dict_sorted
 
-#https://stackoverflow.com/questions/60969987/how-can-i-save-the-original-index-after-sorting-a-list
+melt_bed_dict = extract_basal_vals('melt rate') #,x_bed_dict=x_bed_dict_sorted)
 
-print(x_bed_dict_sorted)
+# Extract lists of the bed values (i.e. without keys) from the dictionaries
+# (This is what will actually be plotted)
+x_bed = list(x_bed_dict_sorted.values())
+temp_bed = list(temp_bed_dict_sorted.values())
+melt_bed = list(melt_bed_dict.values())
+
+bed_variables = {'temperature', 'melt rate', 'coldtempmask', 'temperature loads', 'water sheet thickness', 'normal vector', 'velocity', 'zb'}
+var_vals_bed = {}
+for varname in bed_variables:
+    var_vals_bed[varname] = extract_basal_vals(varname)
+
+var_vals_bed['x_vals'] = x_bed_dict_sorted
+
+#print(x_bed_dict_sorted)
+
+# Save dictionaries of bed data using pickle
+filename = 'bed_data'
+with open(filename,'wb') as file:
+    pickle.dump(var_vals_bed,file)
 
 print(f"Total number of basal points: {len(bed_ids)}")
 print(f"Number of basal points along centre line: {len(bed_centre_ids)}")
@@ -113,4 +141,8 @@ print(f"Number of basal points along centre line: {len(bed_centre_ids)}")
 #ax1.plot()
 
 plt.plot(x_bed,temp_bed)
+#plt.plot(x_bed,melt_bed)
+#plt.plot(x_bed,list(var_vals_bed['water sheet thickness'].values()))
+plt.xlabel('x (m)')
+plt.ylabel('T (K)')
 plt.show()
