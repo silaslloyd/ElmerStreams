@@ -21,7 +21,7 @@ for filename in filenames:
 
     # Function for turning the variable values from the nested dictionary into a list
     def bed_vals_list(bed_vals_dict,varname):
-        var_vals = list(bed_vals_dict[varname].values())
+        var_vals = np.array(list(bed_vals_dict[varname].values()))
         return var_vals
 
     x_bed = bed_vals_list(bed_vals_dict=bed_vals, varname='x_vals')

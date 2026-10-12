@@ -75,7 +75,7 @@ for key in sorted(x_bed_dict, key=x_bed_dict.get):      # https://www.geeksforge
 # Function for creating a dictionary of the basal values of a given variable, in order of increasing x
 def extract_basal_vals(var_name): #,x_bed_dict):
     var = mesh.point_data[var_name]
-    var_bed_dict = {nid: var[nid] for nid in bed_centre_ids}
+    var_bed_dict = {nid: np.array(var[nid]) for nid in bed_centre_ids}
     var_bed_dict_sorted = {}
     for key in x_bed_dict_sorted:
         var_bed_dict_sorted[key] = var_bed_dict[key]      # note: x and other variable dictionaries have the same keys: the node ids
