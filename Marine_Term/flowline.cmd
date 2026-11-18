@@ -37,7 +37,7 @@ echo "Starting Initialisation"
 
 echo ""
 echo "Building Result Directories"
-mkdir -p FlowlineTCVTUs
+mkdir -p VTUs
 cd Initialisation
 mkdir -p ScriptOutputs
 mkdir -p VTUs

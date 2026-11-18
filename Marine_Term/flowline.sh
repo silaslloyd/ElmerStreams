@@ -32,7 +32,7 @@ echo "Starting Initialisation"
 
 echo ""
 echo "Building Result Directories"
-mkdir -p FlowlineTCVTUs
+mkdir -p VTUs
 cd Initialisation
 mkdir -p ScriptOutputs
 mkdir -p VTUs
@@ -88,5 +88,5 @@ fi
 SIF_FILE="${NAME}.sif"
 sed "s/__RUNNAME__/${NAME}/g" "${SIF_TEMPLATE}" > "${SIF_FILE}"
 mkdir -p "FlowlineTCScriptOutputs"
-nohup mpirun -np $SLURM_NTASKS ElmerSolver "${SIF_FILE}" > FlowlineTCScriptOutputs/${NAME}.out 
+nohup mpirun -np $SLURM_NTASKS ElmerSolver "${SIF_FILE}" > ScriptOutputs/${NAME}.out 
 echo "DONE"
