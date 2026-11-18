@@ -19,6 +19,8 @@ while [[ $# -gt 0 ]]; do
         sloppy)
             MODE="sloppy"
             ;;
+        preEGU)
+            MIDE="preEGU"
         *)
             NAME="$1"
             ;;
