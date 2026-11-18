@@ -63,7 +63,7 @@ if [[ "$MODE" == "periodic" ]]; then
 	ElmerGrid 14 5 footprint.msh -partition $((SLURM_NTASKS)) 1 1 -periodic 0 1 0 -autoclean # > /dev/null 2>&1
 elif [[ "$MODE" == "symmetric" ]]; then
 	ElmerGrid 14 2 footprint.msh -metiskway $SLURM_NTASKS -autoclean # > /dev/null 2>&1
-        ElmerGrid 14 5 footprint.msh -metiskway $SLURM_NTASKS -autoclean # > /dev/null 2>&1
+    ElmerGrid 14 5 footprint.msh -metiskway $SLURM_NTASKS -autoclean # > /dev/null 2>&1
 fi
 
 echo "Done"
@@ -93,5 +93,5 @@ fi
 SIF_FILE="${NAME}.sif"
 sed "s/__RUNNAME__/${NAME}/g" "${SIF_TEMPLATE}" > "${SIF_FILE}"
 mkdir -p "FlowlineTCScriptOutputs"
-nohup mpirun -np $SLURM_NTASKS ElmerSolver "${SIF_FILE}" > FlowlineTCScriptOutputs/${NAME}.out 
+nohup mpirun -np $SLURM_NTASKS ElmerSolver "${SIF_FILE}" > ScriptOutputs/${NAME}.out 
 echo "DONE"

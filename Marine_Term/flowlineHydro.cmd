@@ -96,5 +96,5 @@ SIF_TEMPLATE="ThermoCoupled_template.sif"
 SIF_FILE="${NAME}.sif"
 sed "s/__RUNNAME__/${NAME}/g" "${SIF_TEMPLATE}" > "${SIF_FILE}"
 mkdir -p "FlowlineTCScriptOutputs"
-nohup mpirun -np $SLURM_NTASKS ElmerSolver "${SIF_FILE}" > FlowlineTCScriptOutputs/${NAME}.out 
+nohup mpirun -np $SLURM_NTASKS ElmerSolver "${SIF_FILE}" > ScriptOutputs/${NAME}.out 
 echo "DONE"
