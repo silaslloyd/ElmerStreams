@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --output=./slurms/Flowline_slurm-%j.out
-#SBATCH --job-name="Flowline"
+#SBATCH --job-name="FineCareful"
 #SBATCH --ntasks=512
 #SBATCH --time=72:00:00
 #SBATCH --mail-type=all
@@ -29,8 +29,6 @@ done
 echo "BCs: $MODE"
 echo "Name: $NAME"
 
-#SLURM_NTASKS=32
-
 echo "Running on $SLURM_NTASKS partitions"
 echo "----------------------------------"
 echo "Starting Initialisation"
@@ -58,13 +56,8 @@ python3 Initialisation/createGeoFile_Flowline.py
 
 gmsh footprint.geo -1 -2 -o footprint.msh
 
-if [[ "$MODE" == "periodic" ]]; then
-	ElmerGrid 14 2 footprint.msh -partition $((SLURM_NTASKS)) 1 1 -periodic 0 1 0 -autoclean # > /dev/null 2>&1
-	ElmerGrid 14 5 footprint.msh -partition $((SLURM_NTASKS)) 1 1 -periodic 0 1 0 -autoclean # > /dev/null 2>&1
-elif [[ "$MODE" == "symmetric" ]]; then
-	ElmerGrid 14 2 footprint.msh -metiskway $SLURM_NTASKS -autoclean # > /dev/null 2>&1
-        ElmerGrid 14 5 footprint.msh -metiskway $SLURM_NTASKS -autoclean # > /dev/null 2>&1
-fi
+ElmerGrid 14 2 footprint.msh -metiskway $SLURM_NTASKS -autoclean # > /dev/null 2>&1
+ElmerGrid 14 5 footprint.msh -metiskway $SLURM_NTASKS -autoclean # > /dev/null 2>&1
 
 echo "Done"
 echo""
@@ -72,12 +65,15 @@ echo""
 
 if [[ "$MODE" == "careful" ]]; then
         HYDROLOGY_SOLVER="sheetsolverhwCS.f90"
+elif [[ "$MODE" == "preEGU" ]]; then
+        HYDROLOGY_SOLVER="sheetsolverhwpreEGU.f90"
 elif [[ "$MODE" == "sloppy" ]]; then
         HYDROLOGY_SOLVER="sheetsolverhw.f90"
 fi
 
 echo "Compile hydrology solver"
 elmerf90 ./../SRC/$HYDROLOGY_SOLVER -o ./../SRC/SheetSolverhw.so
+#elmerf90 ./../SRC/sheetsolverhwpreEGU.f90 -o ./../SRC/SheetSolverhw.so
 echo "Done"
 
 
