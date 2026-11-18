@@ -70,7 +70,7 @@ SUBROUTINE SheetSolverhw( Model,Solver,dt,TransientSimulation )
 
   CHARACTER(LEN=MAX_NAME_LEN) :: SolverName
 
-  SAVE hwOld, hwOldPerm, MASS, STIFF, LOAD, FORCE, coordinationnumber, numberofpassiveneighbours
+  SAVE hwOld, hwOldPerm, MASS, STIFF, LOAD, FORCE  !, coordinationnumber, numberofpassiveneighbours
 
 !PointerToSolver => Solver    ! https://fortran-lang.discourse.group/t/understanding-fortran-pointers/1142
 
