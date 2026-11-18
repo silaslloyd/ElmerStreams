@@ -1,13 +1,17 @@
-footprint/
-looper_slurms/
-OutputPickles/
-OutputPlots/
-VTUs/
-SIFs/
-ThermoCoupled_slurm*
 *.sif
 *.out
 *.dat
 !InitialiseT1.sif
 !InitialiseVel.sif
 !ThermoCoupled_template.sif
+
+footprint/
+OutputPickles/
+OutputPlots/
+VTUs/
+SIFs/
+slurms
+
+# Old?
+looper_slurms/
+ThermoCoupled_slurm*
