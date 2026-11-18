@@ -2,9 +2,9 @@
 L=816153.2402266143;
 GL=686248.8494905449;
 W=1000;
-resb=10000;
-resbb=10000;
-resgl=1000;
+resb=1000;
+resbb=1000;
+resgl=500;
 Point(1) = {0, 0, 0, resb};
 Point(2) = {GL - GL/6, 0, 0, resgl};
 Point(3) = {GL, 0, 0, resgl};
