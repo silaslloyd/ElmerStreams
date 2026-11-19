@@ -20,7 +20,7 @@ while [[ $# -gt 0 ]]; do
             MODE="sloppy"
             ;;
         preEGU)
-            MIDE="preEGU"
+            MODE="preEGU"
         *)
             NAME="$1"
             ;;
