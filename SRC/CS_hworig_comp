@@ -1,0 +1,256 @@
+2c2
+< SheetSolverhw.so:     file format elf64-x86-64
+---
+> SheetSolverhwCSWORKING.so:     file format elf64-x86-64
+350c350
+<     2478:	66 0f 6f 05 e0 50 00 	movdqa 0x50e0(%rip),%xmm0        # 7560 <_fini+0x58c>
+---
+>     2478:	66 0f 6f 05 f0 50 00 	movdqa 0x50f0(%rip),%xmm0        # 7570 <_fini+0x59c>
+359c359
+<     249f:	66 0f 6f 05 c9 50 00 	movdqa 0x50c9(%rip),%xmm0        # 7570 <_fini+0x59c>
+---
+>     249f:	66 0f 6f 05 d9 50 00 	movdqa 0x50d9(%rip),%xmm0        # 7580 <_fini+0x5ac>
+401c401
+<     2559:	48 8d 2d c0 4f 00 00 	lea    0x4fc0(%rip),%rbp        # 7520 <_fini+0x54c>
+---
+>     2559:	48 8d 2d cc 4f 00 00 	lea    0x4fcc(%rip),%rbp        # 752c <_fini+0x558>
+477c477
+<     26b3:	66 0f 6f 05 75 4e 00 	movdqa 0x4e75(%rip),%xmm0        # 7530 <_fini+0x55c>
+---
+>     26b3:	66 0f 6f 05 85 4e 00 	movdqa 0x4e85(%rip),%xmm0        # 7540 <_fini+0x56c>
+535c535
+<     27be:	66 0f 6f 05 7a 4d 00 	movdqa 0x4d7a(%rip),%xmm0        # 7540 <_fini+0x56c>
+---
+>     27be:	66 0f 6f 05 8a 4d 00 	movdqa 0x4d8a(%rip),%xmm0        # 7550 <_fini+0x57c>
+659c659
+<     2986:	48 8d 35 3b 48 00 00 	lea    0x483b(%rip),%rsi        # 71c8 <_fini+0x1f4>
+---
+>     2986:	48 8d 35 43 48 00 00 	lea    0x4843(%rip),%rsi        # 71d0 <_fini+0x1fc>
+984c984
+<     2ea8:	66 0f 6f 1d 80 46 00 	movdqa 0x4680(%rip),%xmm3        # 7530 <_fini+0x55c>
+---
+>     2ea8:	66 0f 6f 1d 90 46 00 	movdqa 0x4690(%rip),%xmm3        # 7540 <_fini+0x56c>
+1310c1310
+<     33be:	66 0f 6f 1d 6a 41 00 	movdqa 0x416a(%rip),%xmm3        # 7530 <_fini+0x55c>
+---
+>     33be:	66 0f 6f 1d 7a 41 00 	movdqa 0x417a(%rip),%xmm3        # 7540 <_fini+0x56c>
+1365c1365
+<     34b4:	66 0f 6f 1d 74 40 00 	movdqa 0x4074(%rip),%xmm3        # 7530 <_fini+0x55c>
+---
+>     34b4:	66 0f 6f 1d 84 40 00 	movdqa 0x4084(%rip),%xmm3        # 7540 <_fini+0x56c>
+1416c1416
+<     3595:	66 0f 6f 1d 93 3f 00 	movdqa 0x3f93(%rip),%xmm3        # 7530 <_fini+0x55c>
+---
+>     3595:	66 0f 6f 1d a3 3f 00 	movdqa 0x3fa3(%rip),%xmm3        # 7540 <_fini+0x56c>
+1467c1467
+<     3676:	66 0f 6f 1d b2 3e 00 	movdqa 0x3eb2(%rip),%xmm3        # 7530 <_fini+0x55c>
+---
+>     3676:	66 0f 6f 1d c2 3e 00 	movdqa 0x3ec2(%rip),%xmm3        # 7540 <_fini+0x56c>
+1518c1518
+<     3757:	66 0f 6f 1d d1 3d 00 	movdqa 0x3dd1(%rip),%xmm3        # 7530 <_fini+0x55c>
+---
+>     3757:	66 0f 6f 1d e1 3d 00 	movdqa 0x3de1(%rip),%xmm3        # 7540 <_fini+0x56c>
+1569c1569
+<     3838:	66 0f 6f 1d f0 3c 00 	movdqa 0x3cf0(%rip),%xmm3        # 7530 <_fini+0x55c>
+---
+>     3838:	66 0f 6f 1d 00 3d 00 	movdqa 0x3d00(%rip),%xmm3        # 7540 <_fini+0x56c>
+1595c1595
+<     38b4:	48 8d 15 55 3a 00 00 	lea    0x3a55(%rip),%rdx        # 7310 <_fini+0x33c>
+---
+>     38b4:	48 8d 15 5d 3a 00 00 	lea    0x3a5d(%rip),%rdx        # 7318 <_fini+0x344>
+1620c1620
+<     3919:	66 0f 6f 1d 0f 3c 00 	movdqa 0x3c0f(%rip),%xmm3        # 7530 <_fini+0x55c>
+---
+>     3919:	66 0f 6f 1d 1f 3c 00 	movdqa 0x3c1f(%rip),%xmm3        # 7540 <_fini+0x56c>
+1646c1646
+<     3995:	48 8d 15 ec 39 00 00 	lea    0x39ec(%rip),%rdx        # 7388 <_fini+0x3b4>
+---
+>     3995:	48 8d 15 f4 39 00 00 	lea    0x39f4(%rip),%rdx        # 7390 <_fini+0x3bc>
+1671c1671
+<     39fa:	66 0f 6f 1d 2e 3b 00 	movdqa 0x3b2e(%rip),%xmm3        # 7530 <_fini+0x55c>
+---
+>     39fa:	66 0f 6f 1d 3e 3b 00 	movdqa 0x3b3e(%rip),%xmm3        # 7540 <_fini+0x56c>
+1697c1697
+<     3a76:	48 8d 15 83 39 00 00 	lea    0x3983(%rip),%rdx        # 7400 <_fini+0x42c>
+---
+>     3a76:	48 8d 15 8b 39 00 00 	lea    0x398b(%rip),%rdx        # 7408 <_fini+0x434>
+1944c1944
+<     3e49:	66 0f 6f 1d df 36 00 	movdqa 0x36df(%rip),%xmm3        # 7530 <_fini+0x55c>
+---
+>     3e49:	66 0f 6f 1d ef 36 00 	movdqa 0x36ef(%rip),%xmm3        # 7540 <_fini+0x56c>
+2057c2057
+<     402c:	f3 0f 10 25 4c 35 00 	movss  0x354c(%rip),%xmm4        # 7580 <_fini+0x5ac>
+---
+>     402c:	f3 0f 10 25 5c 35 00 	movss  0x355c(%rip),%xmm4        # 7590 <_fini+0x5bc>
+2070c2070
+<     4063:	66 0f 6f 1d c5 34 00 	movdqa 0x34c5(%rip),%xmm3        # 7530 <_fini+0x55c>
+---
+>     4063:	66 0f 6f 1d d5 34 00 	movdqa 0x34d5(%rip),%xmm3        # 7540 <_fini+0x56c>
+2141c2141
+<     41a9:	f3 0f 10 1d cf 33 00 	movss  0x33cf(%rip),%xmm3        # 7580 <_fini+0x5ac>
+---
+>     41a9:	f3 0f 10 1d df 33 00 	movss  0x33df(%rip),%xmm3        # 7590 <_fini+0x5bc>
+2154c2154
+<     41e1:	66 0f 6f 1d 47 33 00 	movdqa 0x3347(%rip),%xmm3        # 7530 <_fini+0x55c>
+---
+>     41e1:	66 0f 6f 1d 57 33 00 	movdqa 0x3357(%rip),%xmm3        # 7540 <_fini+0x56c>
+2220c2220
+<     4312:	f3 0f 10 1d 66 32 00 	movss  0x3266(%rip),%xmm3        # 7580 <_fini+0x5ac>
+---
+>     4312:	f3 0f 10 1d 76 32 00 	movss  0x3276(%rip),%xmm3        # 7590 <_fini+0x5bc>
+2230c2230
+<     4341:	66 0f 6f 1d e7 31 00 	movdqa 0x31e7(%rip),%xmm3        # 7530 <_fini+0x55c>
+---
+>     4341:	66 0f 6f 1d f7 31 00 	movdqa 0x31f7(%rip),%xmm3        # 7540 <_fini+0x56c>
+2299c2299
+<     447c:	f3 0f 10 25 fc 30 00 	movss  0x30fc(%rip),%xmm4        # 7580 <_fini+0x5ac>
+---
+>     447c:	f3 0f 10 25 0c 31 00 	movss  0x310c(%rip),%xmm4        # 7590 <_fini+0x5bc>
+2309c2309
+<     44aa:	66 0f 6f 1d 7e 30 00 	movdqa 0x307e(%rip),%xmm3        # 7530 <_fini+0x55c>
+---
+>     44aa:	66 0f 6f 1d 8e 30 00 	movdqa 0x308e(%rip),%xmm3        # 7540 <_fini+0x56c>
+2443c2443
+<     46f8:	f2 0f 10 25 50 2e 00 	movsd  0x2e50(%rip),%xmm4        # 7550 <_fini+0x57c>
+---
+>     46f8:	f2 0f 10 25 60 2e 00 	movsd  0x2e60(%rip),%xmm4        # 7560 <_fini+0x58c>
+2465c2465
+<     4750:	66 0f 57 05 f8 2d 00 	xorpd  0x2df8(%rip),%xmm0        # 7550 <_fini+0x57c>
+---
+>     4750:	66 0f 57 05 08 2e 00 	xorpd  0x2e08(%rip),%xmm0        # 7560 <_fini+0x58c>
+2468c2468
+<     475e:	f3 0f 10 35 1e 2e 00 	movss  0x2e1e(%rip),%xmm6        # 7584 <_fini+0x5b0>
+---
+>     475e:	f3 0f 10 35 2e 2e 00 	movss  0x2e2e(%rip),%xmm6        # 7594 <_fini+0x5c0>
+2492c2492
+<     47c5:	66 0f 6f 1d 63 2d 00 	movdqa 0x2d63(%rip),%xmm3        # 7530 <_fini+0x55c>
+---
+>     47c5:	66 0f 6f 1d 73 2d 00 	movdqa 0x2d73(%rip),%xmm3        # 7540 <_fini+0x56c>
+2887c2887
+<     4e6f:	48 8d 2d aa 26 00 00 	lea    0x26aa(%rip),%rbp        # 7520 <_fini+0x54c>
+---
+>     4e6f:	48 8d 2d b6 26 00 00 	lea    0x26b6(%rip),%rbp        # 752c <_fini+0x558>
+2916c2916
+<     4ef8:	66 0f 6f 05 30 26 00 	movdqa 0x2630(%rip),%xmm0        # 7530 <_fini+0x55c>
+---
+>     4ef8:	66 0f 6f 05 40 26 00 	movdqa 0x2640(%rip),%xmm0        # 7540 <_fini+0x56c>
+2957c2957
+<     4fbf:	66 0f 6f 1d 79 25 00 	movdqa 0x2579(%rip),%xmm3        # 7540 <_fini+0x56c>
+---
+>     4fbf:	66 0f 6f 1d 89 25 00 	movdqa 0x2589(%rip),%xmm3        # 7550 <_fini+0x57c>
+3093c3093
+<     5275:	66 0f 6f 1d c3 22 00 	movdqa 0x22c3(%rip),%xmm3        # 7540 <_fini+0x56c>
+---
+>     5275:	66 0f 6f 1d d3 22 00 	movdqa 0x22d3(%rip),%xmm3        # 7550 <_fini+0x57c>
+3112c3112
+<     52db:	66 0f 6f 1d 5d 22 00 	movdqa 0x225d(%rip),%xmm3        # 7540 <_fini+0x56c>
+---
+>     52db:	66 0f 6f 1d 6d 22 00 	movdqa 0x226d(%rip),%xmm3        # 7550 <_fini+0x57c>
+3123c3123
+<     5317:	48 8d 2d 02 22 00 00 	lea    0x2202(%rip),%rbp        # 7520 <_fini+0x54c>
+---
+>     5317:	48 8d 2d 0e 22 00 00 	lea    0x220e(%rip),%rbp        # 752c <_fini+0x558>
+3655c3655
+<     5bdd:	48 8d 3d 0c 19 00 00 	lea    0x190c(%rip),%rdi        # 74f0 <_fini+0x51c>
+---
+>     5bdd:	48 8d 3d 14 19 00 00 	lea    0x1914(%rip),%rdi        # 74f8 <_fini+0x524>
+3691c3691
+<     5c89:	f3 0f 10 25 ef 18 00 	movss  0x18ef(%rip),%xmm4        # 7580 <_fini+0x5ac>
+---
+>     5c89:	f3 0f 10 25 ff 18 00 	movss  0x18ff(%rip),%xmm4        # 7590 <_fini+0x5bc>
+3719c3719
+<     5d0b:	48 8d 15 ee 16 00 00 	lea    0x16ee(%rip),%rdx        # 7400 <_fini+0x42c>
+---
+>     5d0b:	48 8d 15 f6 16 00 00 	lea    0x16f6(%rip),%rdx        # 7408 <_fini+0x434>
+3741c3741
+<     5d62:	f2 0f 10 05 1e 18 00 	movsd  0x181e(%rip),%xmm0        # 7588 <_fini+0x5b4>
+---
+>     5d62:	f2 0f 10 05 2e 18 00 	movsd  0x182e(%rip),%xmm0        # 7598 <_fini+0x5c4>
+3804c3804
+<     5e6f:	66 0f 6f 1d b9 16 00 	movdqa 0x16b9(%rip),%xmm3        # 7530 <_fini+0x55c>
+---
+>     5e6f:	66 0f 6f 1d c9 16 00 	movdqa 0x16c9(%rip),%xmm3        # 7540 <_fini+0x56c>
+3856c3856
+<     5f56:	66 0f 6f 1d d2 15 00 	movdqa 0x15d2(%rip),%xmm3        # 7530 <_fini+0x55c>
+---
+>     5f56:	66 0f 6f 1d e2 15 00 	movdqa 0x15e2(%rip),%xmm3        # 7540 <_fini+0x56c>
+4028c4028
+<     624d:	f2 0f 10 05 3b 13 00 	movsd  0x133b(%rip),%xmm0        # 7590 <_fini+0x5bc>
+---
+>     624d:	f2 0f 10 05 4b 13 00 	movsd  0x134b(%rip),%xmm0        # 75a0 <_fini+0x5cc>
+4064c4064
+<     62d2:	48 8d 15 4f 12 00 00 	lea    0x124f(%rip),%rdx        # 7528 <_fini+0x554>
+---
+>     62d2:	48 8d 15 5b 12 00 00 	lea    0x125b(%rip),%rdx        # 7534 <_fini+0x560>
+4115c4115
+<     639b:	48 8d 15 e6 0f 00 00 	lea    0xfe6(%rip),%rdx        # 7388 <_fini+0x3b4>
+---
+>     639b:	48 8d 15 ee 0f 00 00 	lea    0xfee(%rip),%rdx        # 7390 <_fini+0x3bc>
+4151c4151
+<     6434:	48 8d 15 d5 0e 00 00 	lea    0xed5(%rip),%rdx        # 7310 <_fini+0x33c>
+---
+>     6434:	48 8d 15 dd 0e 00 00 	lea    0xedd(%rip),%rdx        # 7318 <_fini+0x344>
+4346c4346
+<     6778:	66 0f 6f 1d b0 0d 00 	movdqa 0xdb0(%rip),%xmm3        # 7530 <_fini+0x55c>
+---
+>     6778:	66 0f 6f 1d c0 0d 00 	movdqa 0xdc0(%rip),%xmm3        # 7540 <_fini+0x56c>
+4372c4372
+<     67f1:	48 8d 35 30 0c 00 00 	lea    0xc30(%rip),%rsi        # 7428 <_fini+0x454>
+---
+>     67f1:	48 8d 35 38 0c 00 00 	lea    0xc38(%rip),%rsi        # 7430 <_fini+0x45c>
+4401c4401
+<     687d:	48 8d 0d fc 0b 00 00 	lea    0xbfc(%rip),%rcx        # 7480 <_fini+0x4ac>
+---
+>     687d:	48 8d 0d 04 0c 00 00 	lea    0xc04(%rip),%rcx        # 7488 <_fini+0x4b4>
+4410c4410
+<     68ac:	48 8d 0d 71 0c 00 00 	lea    0xc71(%rip),%rcx        # 7524 <_fini+0x550>
+---
+>     68ac:	48 8d 0d 7d 0c 00 00 	lea    0xc7d(%rip),%rcx        # 7530 <_fini+0x55c>
+4486c4486
+<     69de:	48 8d 35 eb 08 00 00 	lea    0x8eb(%rip),%rsi        # 72d0 <_fini+0x2fc>
+---
+>     69de:	48 8d 35 f3 08 00 00 	lea    0x8f3(%rip),%rsi        # 72d8 <_fini+0x304>
+4495c4495
+<     6a09:	48 8d 35 80 08 00 00 	lea    0x880(%rip),%rsi        # 7290 <_fini+0x2bc>
+---
+>     6a09:	48 8d 35 88 08 00 00 	lea    0x888(%rip),%rsi        # 7298 <_fini+0x2c4>
+4504c4504
+<     6a34:	48 8d 35 fd 08 00 00 	lea    0x8fd(%rip),%rsi        # 7338 <_fini+0x364>
+---
+>     6a34:	48 8d 35 05 09 00 00 	lea    0x905(%rip),%rsi        # 7340 <_fini+0x36c>
+4516c4516
+<     6a6d:	48 8d 35 ac 07 00 00 	lea    0x7ac(%rip),%rsi        # 7220 <_fini+0x24c>
+---
+>     6a6d:	48 8d 35 b4 07 00 00 	lea    0x7b4(%rip),%rsi        # 7228 <_fini+0x254>
+4609c4609
+<     6bd5:	48 8d 35 d4 07 00 00 	lea    0x7d4(%rip),%rsi        # 73b0 <_fini+0x3dc>
+---
+>     6bd5:	48 8d 35 dc 07 00 00 	lea    0x7dc(%rip),%rsi        # 73b8 <_fini+0x3e4>
+4615c4615
+<     6bf3:	66 0f 6f 1d 35 09 00 	movdqa 0x935(%rip),%xmm3        # 7530 <_fini+0x55c>
+---
+>     6bf3:	66 0f 6f 1d 45 09 00 	movdqa 0x945(%rip),%xmm3        # 7540 <_fini+0x56c>
+4695c4695
+<     6d5d:	48 8d 35 fc 04 00 00 	lea    0x4fc(%rip),%rsi        # 7260 <_fini+0x28c>
+---
+>     6d5d:	48 8d 35 04 05 00 00 	lea    0x504(%rip),%rsi        # 7268 <_fini+0x294>
+4704c4704
+<     6d88:	48 8d 35 59 04 00 00 	lea    0x459(%rip),%rsi        # 71e8 <_fini+0x214>
+---
+>     6d88:	48 8d 35 61 04 00 00 	lea    0x461(%rip),%rsi        # 71f0 <_fini+0x21c>
+4724c4724
+<     6dda:	48 8d 3d c7 06 00 00 	lea    0x6c7(%rip),%rdi        # 74a8 <_fini+0x4d4>
+---
+>     6dda:	48 8d 3d cf 06 00 00 	lea    0x6cf(%rip),%rdi        # 74b0 <_fini+0x4dc>
+4729c4729
+<     6df0:	4c 8d 2d a9 03 00 00 	lea    0x3a9(%rip),%r13        # 71a0 <_fini+0x1cc>
+---
+>     6df0:	4c 8d 2d b1 03 00 00 	lea    0x3b1(%rip),%r13        # 71a8 <_fini+0x1d4>
+4759c4759
+<     6e66:	48 8d 35 0b 03 00 00 	lea    0x30b(%rip),%rsi        # 7178 <_fini+0x1a4>
+---
+>     6e66:	48 8d 35 13 03 00 00 	lea    0x313(%rip),%rsi        # 7180 <_fini+0x1ac>
+4800c4800
+<     6f43:	66 0f 6f 05 f5 05 00 	movdqa 0x5f5(%rip),%xmm0        # 7540 <_fini+0x56c>
+---
+>     6f43:	66 0f 6f 05 05 06 00 	movdqa 0x605(%rip),%xmm0        # 7550 <_fini+0x57c>

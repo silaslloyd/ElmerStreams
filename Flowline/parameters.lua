@@ -71,8 +71,8 @@ Tsurf = T0 - Tscale
 -- # Mesh Parameters
 GL = 2.018*xscale
 L = 2.4*xscale
-GLRes = 1000
-BoundaryRes = 10000
+GLRes = 500 --1000
+BoundaryRes = 1000 --10000
 --partitions = 128
 --W = 60*zscale
 W = 50*zscale

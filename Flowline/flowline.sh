@@ -1,9 +1,4 @@
 #!/bin/bash
-#SBATCH --output=./slurms/Flowline_slurm-%j.out
-#SBATCH --job-name="Flowline"
-#SBATCH --ntasks=512
-#SBATCH --time=72:00:00
-#SBATCH --mail-type=all
 
 pwd
 set -e
@@ -29,7 +24,7 @@ done
 echo "BCs: $MODE"
 echo "Name: $NAME"
 
-#SLURM_NTASKS=32
+SLURM_NTASKS=32
 
 echo "Running on $SLURM_NTASKS partitions"
 echo "----------------------------------"
@@ -37,7 +32,7 @@ echo "Starting Initialisation"
 
 echo ""
 echo "Building Result Directories"
-mkdir -p FlowlineTCVTUs
+mkdir -p VTUs
 cd Initialisation
 mkdir -p ScriptOutputs
 mkdir -p VTUs
@@ -93,5 +88,5 @@ fi
 SIF_FILE="${NAME}.sif"
 sed "s/__RUNNAME__/${NAME}/g" "${SIF_TEMPLATE}" > "${SIF_FILE}"
 mkdir -p "FlowlineTCScriptOutputs"
-nohup mpirun -np $SLURM_NTASKS ElmerSolver "${SIF_FILE}" > FlowlineTCScriptOutputs/${NAME}.out 
+nohup mpirun -np $SLURM_NTASKS ElmerSolver "${SIF_FILE}" > ScriptOutputs/${NAME}.out 
 echo "DONE"
